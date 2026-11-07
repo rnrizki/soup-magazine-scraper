@@ -47,9 +47,13 @@ class MultiScrapeRequest(BaseModel):
     check_dimensions: bool = True
 
 class ZipDownloadItem(BaseModel):
-    url: str
+    url: Optional[str] = None
+    high_res_url: Optional[str] = None
+    image_url: Optional[str] = None
     title: Optional[str] = "Magazine Cover"
     filename: Optional[str] = None
+    issue: Optional[str] = None
+    id: Optional[Any] = None
 
 class ZipDownloadRequest(BaseModel):
     items: List[ZipDownloadItem]
@@ -174,15 +178,16 @@ def download_zip(payload: ZipDownloadRequest):
         raise HTTPException(status_code=400, detail="No items to download")
 
     def fetch_item(idx: int, item: ZipDownloadItem) -> Optional[Tuple[str, bytes]]:
-        if not item.url:
+        img_url = item.url or item.high_res_url or item.image_url
+        if not img_url:
             return None
         try:
-            parsed = urlparse(item.url)
+            parsed = urlparse(img_url)
             referer = f"{parsed.scheme}://{parsed.netloc}/"
             headers = dict(DEFAULT_HEADERS)
             headers["Referer"] = referer
             
-            resp = requests.get(item.url, headers=headers, timeout=12)
+            resp = requests.get(img_url, headers=headers, timeout=12)
             if resp.status_code == 200 and resp.content:
                 safe_title = re.sub(r'[^\w\-_\. ]', '_', item.title or f"cover_{idx+1}").strip()
                 if not safe_title:
@@ -207,7 +212,7 @@ def download_zip(payload: ZipDownloadRequest):
 
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-        items_to_process = [i for i in payload.items if i.url][:60]
+        items_to_process = [i for i in payload.items if (i.url or i.high_res_url or i.image_url)][:60]
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
             future_to_idx = {

@@ -432,6 +432,60 @@ class MagazineScraper:
             if len(items) >= 80:  # Allow up to 80 items per scrape
                 break
 
+        # Universal fallback: if specific container classes didn't match, inspect all content images
+        if not items:
+            for img in soup.find_all('img'):
+                cand = self._extract_best_img_url(img, base_url)
+                if not cand or cand in seen_images:
+                    continue
+                if any(skip in cand.lower() for skip in ['logo', 'icon', 'avatar', 'badge', 'banner', 'button', 'spinner', 'advertisement']):
+                    continue
+                
+                # Check dimensions if present on tag
+                width = img.get('width')
+                height = img.get('height')
+                if width and height:
+                    try:
+                        if int(width) < 60 or int(height) < 60:
+                            continue
+                    except ValueError:
+                        pass
+
+                # Walk up DOM tree to find closest title/heading
+                curr = img
+                card_title = ""
+                for _ in range(6):
+                    curr = curr.parent
+                    if not curr or curr.name in ['body', 'html']:
+                        break
+                    for tag in ('h1', 'h2', 'h3', 'h4', '.title', '.name', 'strong', 'a'):
+                        t_el = curr.select_one(tag)
+                        if t_el:
+                            t_text = clean_text(t_el.get_text())
+                            if len(t_text) > 4 and not any(s in t_text.lower() for s in ['search', 'menu', 'login', 'read more', 'categories', 'download']):
+                                card_title = clean_magazine_title(t_text)
+                                break
+                    if card_title:
+                        break
+
+                if not card_title and img.get('alt'):
+                    alt = clean_text(img['alt'])
+                    if len(alt) > 3 and not any(s in alt.lower() for s in ['logo', 'icon', 'cover']):
+                        card_title = clean_magazine_title(alt)
+
+                if not card_title:
+                    card_title = "Magazine Issue"
+
+                seen_images.add(cand)
+                items.append({
+                    "title": card_title,
+                    "image_url": cand,
+                    "high_res_url": transform_to_high_res(cand),
+                    "issue": extract_issue_info(card_title)
+                })
+                if len(items) >= 80:
+                    break
+
         return items
 
     def _scrape_single_issue(self, soup: BeautifulSoup, base_url: str, page_title: str) -> Optional[Dict[str, Any]]:
