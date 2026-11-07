@@ -28,33 +28,18 @@
   </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    code, pre, .font-mono {
-      font-family: 'JetBrains Mono', monospace;
-    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
     .glass-card {
       background: rgba(17, 24, 39, 0.75);
       backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
-    .custom-scroll::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    .custom-scroll::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.1);
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 9999px;
-    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-fuchsia-500/30 selection:text-fuchsia-300">
 
-  <!-- Top Navigation Header -->
+  <!-- Navigation Header -->
   <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
@@ -71,7 +56,7 @@
       </div>
 
       <div class="flex items-center space-x-3">
-        <a href="https://github.com/rnrizki" target="_blank" class="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+        <a href="https://github.com/rnrizki/soup-magazine-scraper" target="_blank" class="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 transition">
           <i data-lucide="github" class="w-4 h-4"></i>
           <span>rnrizki</span>
         </a>
@@ -83,12 +68,11 @@
     </div>
   </header>
 
-  <!-- Main Container -->
+  <!-- Main Content -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
     
     <!-- Hero / Input Card -->
     <div class="glass-card rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-      <!-- Glow decoration -->
       <div class="absolute -top-24 -right-24 w-72 h-72 bg-fuchsia-600/10 rounded-full blur-3xl pointer-events-none"></div>
       <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -97,12 +81,32 @@
           Scrape Magazine Covers in <span class="bg-gradient-to-r from-fuchsia-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">Ultra High-Res</span>
         </h2>
         <p class="text-sm text-slate-400">
-          Paste any website URL to automatically extract magazine titles, issue details, and full-resolution cover artwork.
+          Extract high-resolution cover artwork, magazine names, and issue dates from any magazine archive or website.
         </p>
+
+        <!-- Method Tabs Switcher -->
+        <div class="inline-flex p-1 rounded-xl bg-slate-900 border border-slate-800 mt-2">
+          <button 
+            type="button" 
+            onclick="switchTab('url')" 
+            id="tabBtnUrl" 
+            class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-fuchsia-600 text-white shadow transition flex items-center space-x-1.5">
+            <i data-lucide="link" class="w-3.5 h-3.5"></i>
+            <span>Direct URL Scraper</span>
+          </button>
+          <button 
+            type="button" 
+            onclick="switchTab('html')" 
+            id="tabBtnHtml" 
+            class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+            <i data-lucide="code" class="w-3.5 h-3.5"></i>
+            <span>Paste HTML Source (Cloudflare Bypass)</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Scrape Form -->
-      <form id="scrapeForm" onsubmit="handleScrape(event)" class="max-w-4xl mx-auto space-y-4">
+      <!-- Tab 1: URL Form -->
+      <form id="urlScrapeForm" onsubmit="handleUrlScrape(event)" class="max-w-4xl mx-auto space-y-4">
         <div class="flex flex-col sm:flex-row gap-3">
           <div class="relative flex-1">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
@@ -111,9 +115,9 @@
             <input 
               type="text" 
               id="targetUrl" 
-              placeholder="https://example.com/magazines/archive or single issue page..." 
+              placeholder="https://softarchive.download/magazines/page-40 or any magazine page..." 
               required
-              class="w-full pl-12 pr-10 py-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent text-sm font-mono shadow-inner transition"
+              class="w-full pl-12 pr-10 py-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500 text-sm font-mono shadow-inner transition"
             />
             <button 
               type="button" 
@@ -125,67 +129,143 @@
 
           <button 
             type="submit" 
-            id="scrapeBtn"
-            class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-fuchsia-600/25 transition active:scale-[0.98] disabled:opacity-50">
+            id="scrapeUrlBtn"
+            class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-fuchsia-600/25 transition active:scale-[0.98]">
             <i data-lucide="sparkles" class="w-4 h-4"></i>
             <span>Scrape Covers</span>
           </button>
         </div>
 
-        <!-- Mode & Settings Toggle Bar -->
         <div class="flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2 pt-2">
-          <div class="flex items-center space-x-3">
-            <label class="flex items-center space-x-2 cursor-pointer select-none">
-              <input type="checkbox" id="checkDims" checked class="w-4 h-4 rounded text-fuchsia-600 bg-slate-900 border-slate-700 focus:ring-fuchsia-500">
-              <span>Probe actual dimensions & file size</span>
-            </label>
-          </div>
+          <label class="flex items-center space-x-2 cursor-pointer select-none">
+            <input type="checkbox" id="checkDimsUrl" checked class="w-4 h-4 rounded text-fuchsia-600 bg-slate-900 border-slate-700 focus:ring-fuchsia-500">
+            <span>Probe dimensions & file sizes via HTTP range requests</span>
+          </label>
 
           <button 
             type="button" 
             onclick="toggleSettings()"
             class="flex items-center space-x-1.5 text-slate-400 hover:text-fuchsia-400 transition font-medium">
             <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
-            <span id="settingsToggleLabel">Advanced Selectors & Headers</span>
+            <span>Custom Selectors & Cookies</span>
           </button>
         </div>
+      </form>
 
-        <!-- Advanced Settings Drawer -->
-        <div id="advancedSettings" class="hidden p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4 transition-all">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Custom Item Container Selector (optional)</label>
-              <input type="text" id="selContainer" placeholder="e.g. .magazine-card, article, .issue" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 focus:ring-1 focus:ring-fuchsia-500">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Custom Title Selector (optional)</label>
-              <input type="text" id="selTitle" placeholder="e.g. h2.title, .magazine-name" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 focus:ring-1 focus:ring-fuchsia-500">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Custom Cover Image Selector (optional)</label>
-              <input type="text" id="selImage" placeholder="e.g. img.cover, .thumb img" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 focus:ring-1 focus:ring-fuchsia-500">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Custom Issue/Date Selector (optional)</label>
-              <input type="text" id="selIssue" placeholder="e.g. .issue-date, span.vol" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 focus:ring-1 focus:ring-fuchsia-500">
-            </div>
-          </div>
+      <!-- Tab 2: HTML Paste Form (Cloudflare Bypass) -->
+      <form id="htmlScrapeForm" onsubmit="handleHtmlScrape(event)" class="hidden max-w-4xl mx-auto space-y-4">
+        <div class="p-4 rounded-xl bg-indigo-950/40 border border-indigo-800/60 text-xs text-indigo-300 flex items-start space-x-3">
+          <i data-lucide="info" class="w-5 h-5 flex-shrink-0 text-indigo-400 mt-0.5"></i>
           <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Custom Cookie (for sites requiring authentication / session)</label>
-            <input type="text" id="customCookies" placeholder="e.g. session_id=xyz; auth_token=abc" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 focus:ring-1 focus:ring-fuchsia-500">
+            <span class="font-bold">Bypass Cloudflare / Security Check:</span>
+            <p class="mt-0.5 text-slate-300">
+              On Cloudflare-protected sites like <b>SoftArchive</b>, open the page in your browser, press <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white font-mono">Ctrl + U</kbd> (View Page Source), select all (<kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white font-mono">Ctrl + A</kbd>), copy (<kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white font-mono">Ctrl + C</kbd>), and paste the HTML below!
+            </p>
           </div>
         </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Target Base URL (for resolving image links):</label>
+          <input 
+            type="text" 
+            id="htmlBaseUrl" 
+            value="https://softarchive.download/magazines/page-40" 
+            class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-white text-xs font-mono focus:ring-2 focus:ring-fuchsia-500"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Paste HTML Source Code:</label>
+          <textarea 
+            id="rawHtmlInput" 
+            rows="7" 
+            placeholder="Paste raw page HTML source here (<!DOCTYPE html><html>...)..."
+            required
+            class="w-full p-3.5 bg-slate-900 border border-slate-700/80 rounded-xl text-white text-xs font-mono focus:ring-2 focus:ring-fuchsia-500"
+          ></textarea>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <label class="flex items-center space-x-2 cursor-pointer select-none text-xs text-slate-400">
+            <input type="checkbox" id="checkDimsHtml" checked class="w-4 h-4 rounded text-fuchsia-600 bg-slate-900 border-slate-700 focus:ring-fuchsia-500">
+            <span>Probe dimensions & file sizes</span>
+          </label>
+
+          <button 
+            type="submit" 
+            id="scrapeHtmlBtn"
+            class="px-6 py-3 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-semibold text-sm flex items-center space-x-2 shadow-lg shadow-fuchsia-600/25 transition">
+            <i data-lucide="file-code" class="w-4 h-4"></i>
+            <span>Parse Covers from HTML</span>
+          </button>
+        </div>
       </form>
+
+      <!-- Advanced Selectors Settings Drawer -->
+      <div id="advancedSettings" class="hidden max-w-4xl mx-auto mt-4 p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Item Container Selector (optional)</label>
+            <input type="text" id="selContainer" placeholder="e.g. .cell, article, .story, .magazine-card" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Title Selector (optional)</label>
+            <input type="text" id="selTitle" placeholder="e.g. h2.title, .cell_title a" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Cover Image Selector (optional)</label>
+            <input type="text" id="selImage" placeholder="e.g. img.cover, a.thumb img" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Issue/Date Selector (optional)</label>
+            <input type="text" id="selIssue" placeholder="e.g. .issue, .date" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Custom Cookie (optional for logged-in sessions)</label>
+          <input type="text" id="customCookies" placeholder="e.g. session_id=xyz; cf_clearance=abc" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200">
+        </div>
+      </div>
     </div>
 
-    <!-- Loading State -->
+    <!-- Cloudflare Challenge Alert Banner -->
+    <div id="cfAlertBanner" class="hidden p-5 rounded-2xl bg-amber-950/60 border border-amber-600/80 text-amber-200 space-y-3 shadow-xl">
+      <div class="flex items-center space-x-2 text-amber-400 font-bold text-sm">
+        <i data-lucide="shield-alert" class="w-5 h-5 flex-shrink-0"></i>
+        <span>Cloudflare Security Verification Detected!</span>
+      </div>
+      <p class="text-xs text-amber-100/90 leading-relaxed">
+        Situs web ini memproteksi halamannya dengan Cloudflare Turnstile / Quick Security Check sehingga server di-block dari pengambilan data langsung.
+      </p>
+      <div class="p-3 bg-slate-900/80 rounded-xl border border-amber-800/60 text-xs space-y-2">
+        <div class="font-semibold text-white flex items-center space-x-1.5">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+          <span>Solusi Cepat 10 Detik:</span>
+        </div>
+        <ol class="list-decimal list-inside space-y-1 text-slate-300 ml-1">
+          <li>Buka tab browser tempat Anda membuka halaman majalah tersebut.</li>
+          <li>Tekan <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white font-mono">Ctrl + U</kbd> (View Page Source).</li>
+          <li>Tekan <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white font-mono">Ctrl + A</kbd> lalu <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white font-mono">Ctrl + C</kbd> untuk menyalin seluruh HTML-nya.</li>
+          <li>Klik tombol di bawah ini untuk pindah ke tab <b>Paste HTML Source</b> dan paste kode HTML tadi!</li>
+        </ol>
+      </div>
+      <button 
+        type="button" 
+        onclick="switchToHtmlTabWithNotice()"
+        class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs flex items-center space-x-1.5 shadow transition">
+        <i data-lucide="arrow-right-circle" class="w-4 h-4"></i>
+        <span>Buka Tab "Paste HTML Source" Sekarang</span>
+      </button>
+    </div>
+
+    <!-- Loading Indicator -->
     <div id="loadingState" class="hidden text-center py-12 space-y-4">
       <div class="inline-flex p-4 rounded-full bg-fuchsia-950/40 border border-fuchsia-800/50 animate-bounce">
         <i data-lucide="loader-2" class="w-8 h-8 text-fuchsia-400 animate-spin"></i>
       </div>
       <div>
         <h3 class="text-lg font-bold text-white">Scraping with Beautiful Soup & Requests...</h3>
-        <p id="loadingStatusText" class="text-xs text-slate-400 font-mono mt-1">Connecting to target website...</p>
+        <p id="loadingStatusText" class="text-xs text-slate-400 font-mono mt-1">Extracting covers and checking resolutions...</p>
       </div>
     </div>
 
@@ -201,7 +281,7 @@
     <!-- Results Section -->
     <div id="resultsSection" class="hidden space-y-6">
       
-      <!-- Summary & Actions Toolbar -->
+      <!-- Toolbar -->
       <div class="glass-card rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
         <div class="flex items-center space-x-4 w-full md:w-auto">
           <div class="p-3 rounded-xl bg-fuchsia-950/80 border border-fuchsia-800/60 text-fuchsia-400">
@@ -240,7 +320,7 @@
             type="button" 
             onclick="downloadAllZip()" 
             id="btnZip"
-            class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center space-x-1.5 shadow transition">
+            class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-xs flex items-center space-x-1.5 shadow transition">
             <i data-lucide="file-archive" class="w-3.5 h-3.5"></i>
             <span>Download All ZIP</span>
           </button>
@@ -248,7 +328,8 @@
           <button 
             type="button" 
             onclick="exportJson()" 
-            class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs flex items-center space-x-1.5 transition">
+            id="btnJson"
+            class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-200 font-medium text-xs flex items-center space-x-1.5 transition">
             <i data-lucide="file-json" class="w-3.5 h-3.5"></i>
             <span>JSON</span>
           </button>
@@ -256,7 +337,8 @@
           <button 
             type="button" 
             onclick="exportCsv()" 
-            class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs flex items-center space-x-1.5 transition">
+            id="btnCsv"
+            class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-200 font-medium text-xs flex items-center space-x-1.5 transition">
             <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
             <span>CSV</span>
           </button>
@@ -308,9 +390,38 @@
     lucide.createIcons();
     let currentScrapeData = null;
 
+    function switchTab(tab) {
+      const urlForm = document.getElementById('urlScrapeForm');
+      const htmlForm = document.getElementById('htmlScrapeForm');
+      const btnUrl = document.getElementById('tabBtnUrl');
+      const btnHtml = document.getElementById('tabBtnHtml');
+
+      if (tab === 'url') {
+        urlForm.classList.remove('hidden');
+        htmlForm.classList.add('hidden');
+        btnUrl.className = "px-4 py-1.5 rounded-lg text-xs font-semibold bg-fuchsia-600 text-white shadow transition flex items-center space-x-1.5";
+        btnHtml.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+      } else {
+        urlForm.classList.add('hidden');
+        htmlForm.classList.remove('hidden');
+        btnHtml.className = "px-4 py-1.5 rounded-lg text-xs font-semibold bg-fuchsia-600 text-white shadow transition flex items-center space-x-1.5";
+        btnUrl.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+      }
+      lucide.createIcons();
+    }
+
+    function switchToHtmlTabWithNotice() {
+      switchTab('html');
+      const targetUrl = document.getElementById('targetUrl').value.trim();
+      if (targetUrl) {
+        document.getElementById('htmlBaseUrl').value = targetUrl;
+      }
+      document.getElementById('rawHtmlInput').focus();
+      document.getElementById('cfAlertBanner').classList.add('hidden');
+    }
+
     function toggleSettings() {
-      const el = document.getElementById('advancedSettings');
-      el.classList.toggle('hidden');
+      document.getElementById('advancedSettings').classList.toggle('hidden');
     }
 
     function showToast(msg) {
@@ -319,15 +430,15 @@
       toast.classList.remove('translate-y-20', 'opacity-0');
       setTimeout(() => {
         toast.classList.add('translate-y-20', 'opacity-0');
-      }, 2500);
+      }, 3000);
     }
 
-    async function handleScrape(e) {
+    async function handleUrlScrape(e) {
       e.preventDefault();
       const url = document.getElementById('targetUrl').value.trim();
       if (!url) return;
 
-      const checkDims = document.getElementById('checkDims').checked;
+      const checkDims = document.getElementById('checkDimsUrl').checked;
       const selContainer = document.getElementById('selContainer').value.trim();
       const selTitle = document.getElementById('selTitle').value.trim();
       const selImage = document.getElementById('selImage').value.trim();
@@ -350,11 +461,7 @@
         });
       }
 
-      // Show loading
-      document.getElementById('loadingState').classList.remove('hidden');
-      document.getElementById('resultsSection').classList.add('hidden');
-      document.getElementById('errorBanner').classList.add('hidden');
-      document.getElementById('scrapeBtn').disabled = true;
+      showLoading(true);
 
       try {
         const resp = await fetch('/api/scrape', {
@@ -375,20 +482,92 @@
 
         const data = await resp.json();
         currentScrapeData = data;
+
+        if (data.is_cloudflare_blocked) {
+          document.getElementById('cfAlertBanner').classList.remove('hidden');
+        } else {
+          document.getElementById('cfAlertBanner').classList.add('hidden');
+        }
+
         renderResults(data);
       } catch (err) {
         document.getElementById('errorBanner').classList.remove('hidden');
         document.getElementById('errorMessage').innerText = err.message;
       } finally {
-        document.getElementById('loadingState').classList.add('hidden');
-        document.getElementById('scrapeBtn').disabled = false;
+        showLoading(false);
       }
+    }
+
+    async function handleHtmlScrape(e) {
+      e.preventDefault();
+      const html = document.getElementById('rawHtmlInput').value.trim();
+      const baseUrl = document.getElementById('htmlBaseUrl').value.trim() || 'https://softarchive.download';
+      const checkDims = document.getElementById('checkDimsHtml').checked;
+
+      if (!html) return;
+
+      showLoading(true);
+
+      try {
+        const resp = await fetch('/api/scrape-html', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            html: html,
+            base_url: baseUrl,
+            check_dimensions: checkDims
+          })
+        });
+
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          throw new Error(errData.detail || `Server error: ${resp.status}`);
+        }
+
+        const data = await resp.json();
+        currentScrapeData = data;
+        document.getElementById('cfAlertBanner').classList.add('hidden');
+        renderResults(data);
+        showToast(`Successfully extracted ${data.total_items} covers!`);
+      } catch (err) {
+        document.getElementById('errorBanner').classList.remove('hidden');
+        document.getElementById('errorMessage').innerText = err.message;
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function showLoading(isLoading) {
+      const loadEl = document.getElementById('loadingState');
+      const errEl = document.getElementById('errorBanner');
+      const resEl = document.getElementById('resultsSection');
+      const btnUrl = document.getElementById('scrapeUrlBtn');
+      const btnHtml = document.getElementById('scrapeHtmlBtn');
+
+      if (isLoading) {
+        loadEl.classList.remove('hidden');
+        errEl.classList.add('hidden');
+        resEl.classList.add('hidden');
+        if (btnUrl) btnUrl.disabled = true;
+        if (btnHtml) btnHtml.disabled = true;
+      } else {
+        loadEl.classList.add('hidden');
+        if (btnUrl) btnUrl.disabled = false;
+        if (btnHtml) btnHtml.disabled = false;
+      }
+      lucide.createIcons();
     }
 
     function renderResults(data) {
       document.getElementById('resultsSection').classList.remove('hidden');
       document.getElementById('itemCountBadge').innerText = `${data.total_items} items found`;
       document.getElementById('sourceDomainText').innerText = `${data.page_title ? data.page_title + ' · ' : ''}${data.source_url}`;
+
+      // Enable/disable buttons based on items count
+      const hasItems = data.items && data.items.length > 0;
+      document.getElementById('btnZip').disabled = !hasItems;
+      document.getElementById('btnCsv').disabled = !hasItems;
+      document.getElementById('btnJson').disabled = !hasItems;
 
       filterCards();
     }
@@ -422,7 +601,7 @@
         grid.innerHTML = `
           <div class="col-span-full text-center py-12 glass-card rounded-2xl">
             <i data-lucide="image-off" class="w-10 h-10 mx-auto text-slate-500 mb-2"></i>
-            <p class="text-sm text-slate-400">No magazine covers matched the filter criteria.</p>
+            <p class="text-sm text-slate-400">No magazine covers matched the criteria.</p>
           </div>
         `;
         lucide.createIcons();
@@ -442,7 +621,6 @@
 
         return `
           <div class="glass-card rounded-2xl overflow-hidden group hover:border-fuchsia-500/40 transition duration-300 flex flex-col shadow-lg">
-            <!-- Cover Image Container -->
             <div class="relative bg-slate-900 aspect-[3/4] overflow-hidden flex items-center justify-center cursor-pointer" onclick='openLightbox(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
               <img 
                 src="${proxyImgUrl}" 
@@ -453,7 +631,6 @@
               />
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60"></div>
               
-              <!-- Badges on image -->
               <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-mono border backdrop-blur ${resBadgeClass}">
                   ${isHd ? '★ ' : ''}${resText}
@@ -461,7 +638,6 @@
                 ${sizeBadge}
               </div>
 
-              <!-- Quick preview overlay -->
               <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-200 bg-black/40 backdrop-blur-[2px]">
                 <span class="px-3 py-1.5 rounded-lg bg-slate-900/90 text-white text-xs font-medium flex items-center space-x-1.5 border border-slate-700 shadow-xl">
                   <i data-lucide="zoom-in" class="w-3.5 h-3.5 text-fuchsia-400"></i>
@@ -470,7 +646,6 @@
               </div>
             </div>
 
-            <!-- Metadata Info -->
             <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
               <div>
                 <div class="flex items-center space-x-1.5 mb-1">
@@ -482,7 +657,6 @@
                 </h4>
               </div>
 
-              <!-- Action Buttons -->
               <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
                 <button 
                   onclick='downloadSingleCover("${item.high_res_url || item.image_url}", "${item.title.replace(/"/g, '&quot;')}")'
@@ -501,7 +675,7 @@
                 <a 
                   href="${item.high_res_url || item.image_url}" 
                   target="_blank"
-                  title="Open in new tab" 
+                  title="Open direct image in new tab" 
                   class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition">
                   <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                 </a>
@@ -530,6 +704,7 @@
       dlBtn.onclick = () => downloadSingleCover(url, item.title);
 
       modal.classList.remove('hidden');
+      lucide.createIcons();
     }
 
     function closeLightbox() {
@@ -542,40 +717,56 @@
     }
 
     function downloadSingleCover(url, title) {
+      const cleanName = (title || 'magazine_cover').replace(/[^\w\s-]/g, '').trim();
+      const dlUrl = `/api/proxy-image?url=${encodeURIComponent(url)}&download=true&filename=${encodeURIComponent(cleanName + '.jpg')}`;
       const a = document.createElement('a');
-      a.href = `/api/proxy-image?url=${encodeURIComponent(url)}`;
-      a.download = `${title.replace(/[^\w\s-]/g, '').trim() || 'magazine_cover'}.jpg`;
+      a.href = dlUrl;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      showToast('Download started!');
+      showToast('Downloading image...');
     }
 
     async function downloadAllZip() {
-      if (!currentScrapeData || !currentScrapeData.items || currentScrapeData.items.length === 0) return;
+      if (!currentScrapeData || !currentScrapeData.items || currentScrapeData.items.length === 0) {
+        showToast('No covers found to download.');
+        return;
+      }
+      const validItems = currentScrapeData.items
+        .filter(i => (i.high_res_url || i.image_url))
+        .map(i => ({
+          url: String(i.high_res_url || i.image_url),
+          title: String(i.title || 'Magazine Cover')
+        }));
+
+      if (validItems.length === 0) {
+        showToast('No valid image URLs available.');
+        return;
+      }
+
       const btn = document.getElementById('btnZip');
       const origText = btn.innerHTML;
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Packaging ZIP...</span>`;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Packaging ${validItems.length} Covers...</span>`;
       btn.disabled = true;
       lucide.createIcons();
 
       try {
-        const payload = {
-          items: currentScrapeData.items.map(i => ({
-            url: i.high_res_url || i.image_url,
-            title: i.title
-          }))
-        };
-
         const resp = await fetch('/api/download/zip', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ items: validItems })
         });
 
-        if (!resp.ok) throw new Error('ZIP generation failed');
+        if (!resp.ok) {
+          const errText = await resp.text().catch(() => '');
+          throw new Error(`Server returned HTTP ${resp.status}: ${errText}`);
+        }
 
         const blob = await resp.blob();
+        if (blob.size < 100) {
+          throw new Error('Downloaded ZIP is empty or corrupted');
+        }
+
         const dlUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = dlUrl;
@@ -583,11 +774,11 @@
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        window.URL.revokeObjectURL(dlUrl);
+        setTimeout(() => window.URL.revokeObjectURL(dlUrl), 2000);
 
-        showToast('ZIP archive downloaded successfully!');
+        showToast(`ZIP package (${Math.round(blob.size / 1024)} KB) downloaded!`);
       } catch (err) {
-        alert('ZIP Download error: ' + err.message);
+        alert('ZIP Download Error: ' + err.message);
       } finally {
         btn.innerHTML = origText;
         btn.disabled = false;
@@ -596,46 +787,57 @@
     }
 
     function exportJson() {
-      if (!currentScrapeData) return;
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentScrapeData, null, 2));
+      if (!currentScrapeData || !currentScrapeData.items || currentScrapeData.items.length === 0) {
+        showToast('No scraped items to export.');
+        return;
+      }
+      const jsonStr = JSON.stringify(currentScrapeData, null, 2);
+      const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = dataStr;
-      a.download = `magazine_scraped_${Date.now()}.json`;
+      a.href = url;
+      a.download = `magazine_scraped_${new Date().toISOString().slice(0, 10)}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      showToast('JSON exported!');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast('JSON exported successfully!');
     }
 
     function exportCsv() {
-      if (!currentScrapeData || !currentScrapeData.items) return;
-      const rows = [
-        ["ID", "Magazine Name", "Issue / Date", "Resolution", "Width", "Height", "File Size", "High Res Image URL", "Original Image URL"]
-      ];
+      if (!currentScrapeData || !currentScrapeData.items || currentScrapeData.items.length === 0) {
+        showToast('No scraped items to export.');
+        return;
+      }
+      const headers = ["ID", "Magazine Name", "Issue / Date", "Resolution", "Width", "Height", "File Size", "High Res Image URL", "Original Image URL"];
+      const rows = [headers];
 
-      currentScrapeData.items.forEach(i => {
+      currentScrapeData.items.forEach((i, idx) => {
         rows.push([
-          i.id,
-          `"${(i.title || '').replace(/"/g, '""')}"`,
-          `"${(i.issue || '').replace(/"/g, '""')}"`,
-          i.resolution || '',
+          i.id || (idx + 1),
+          `"${String(i.title || '').replace(/"/g, '""')}"`,
+          `"${String(i.issue || '').replace(/"/g, '""')}"`,
+          `"${String(i.resolution || '')}"`,
           i.width || '',
           i.height || '',
-          i.file_size_formatted || '',
-          `"${i.high_res_url || ''}"`,
-          `"${i.image_url || ''}"`
+          `"${String(i.file_size_formatted || '')}"`,
+          `"${String(i.high_res_url || '')}"`,
+          `"${String(i.image_url || '')}"`
         ]);
       });
 
-      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
-      const encodedUri = encodeURI(csvContent);
+      const csvString = rows.map(r => r.join(",")).join("\r\n");
+      // \uFEFF Byte Order Mark ensures Excel & Google Sheets open with proper UTF-8 column formatting
+      const blob = new Blob(["\uFEFF" + csvString], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = encodedUri;
-      a.download = `magazine_covers_${Date.now()}.csv`;
+      a.href = url;
+      a.download = `magazine_covers_${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      showToast('CSV exported!');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast('CSV exported successfully!');
     }
   </script>
 </body>

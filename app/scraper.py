@@ -7,7 +7,12 @@ import requests
 from bs4 import BeautifulSoup
 from PIL import Image
 
-# User-Agent rotation to prevent anti-bot blocks
+try:
+    from curl_cffi import requests as cffi_requests
+    HAS_CURL_CFFI = True
+except ImportError:
+    HAS_CURL_CFFI = False
+
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
@@ -37,7 +42,7 @@ def clean_magazine_title(raw_title: str) -> str:
         return ""
     t = clean_text(raw_title)
     # Remove common site suffix like " - WorldMags", " | Magzter", " :: Read Free"
-    t = re.sub(r'\s*[-–—|•:]\s*(WorldMags|Magzter|Issuu|Free Magazines|PDF Magazines|Magazine Lib|TruePDF|Downmagaz|Read Magazines|Download PDF|Online).*$', '', t, flags=re.IGNORECASE)
+    t = re.sub(r'\s*[-–—|•:]\s*(WorldMags|Magzter|Issuu|SoftArchive|Sanet|Free Magazines|PDF Magazines|Magazine Lib|TruePDF|Downmagaz|Read Magazines|Download PDF|Online).*$', '', t, flags=re.IGNORECASE)
     # Remove "Free Download", "PDF", "True PDF" suffixes
     t = re.sub(r'\b(TruePDF|True\s*PDF|PDF|Free Download|Download|Full Issue)\b', '', t, flags=re.IGNORECASE)
     return t.strip()
@@ -58,6 +63,21 @@ def extract_issue_info(text: str) -> Optional[str]:
         if m:
             return m.group(0).strip()
     return None
+
+def is_cloudflare_challenge(html: str, title: str) -> bool:
+    """Detect if page returned is a Cloudflare / anti-bot challenge page."""
+    indicators = [
+        "attention required! | cloudflare",
+        "quick security check",
+        "just a moment...",
+        "checking your browser before accessing",
+        "enable cookies to continue",
+        "cloudflare ray id",
+        "challenge-platform",
+        "cf-turnstile"
+    ]
+    check_text = (title + " " + html[:3000]).lower()
+    return any(ind in check_text for ind in indicators)
 
 def parse_srcset_highest_res(srcset_str: str, base_url: str) -> Optional[str]:
     """Extract highest resolution URL candidate from srcset string."""
@@ -117,7 +137,6 @@ def transform_to_high_res(img_url: str) -> str:
         qs = parse_qs(parsed.query, keep_blank_values=True)
         keys_to_remove = {'w', 'width', 'h', 'height', 'resize', 'fit', 'max-w', 'max-h', 'size'}
         new_qs = {k: v for k, v in qs.items() if k.lower() not in keys_to_remove}
-        # If removing size params leaves a valid query or empty
         new_query = urlencode(new_qs, doseq=True)
         transformed = urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment))
 
@@ -129,7 +148,7 @@ def probe_image_dimensions(img_url: str, session: requests.Session) -> Tuple[Opt
     without downloading the entire large image file whenever possible.
     """
     headers = dict(DEFAULT_HEADERS)
-    headers["Range"] = "bytes=0-65535"  # Read initial 64KB for image metadata
+    headers["Range"] = "bytes=0-65535"
     try:
         r = session.get(img_url, headers=headers, timeout=5, stream=True)
         content_length = r.headers.get("Content-Range")
@@ -160,64 +179,79 @@ def probe_image_dimensions(img_url: str, session: requests.Session) -> Tuple[Opt
 class MagazineScraper:
     def __init__(self, custom_headers: Optional[Dict[str, str]] = None, custom_cookies: Optional[Dict[str, str]] = None):
         self.session = requests.Session()
-        headers = dict(DEFAULT_HEADERS)
+        self.headers = dict(DEFAULT_HEADERS)
         if custom_headers:
-            headers.update(custom_headers)
-        self.session.headers.update(headers)
+            self.headers.update(custom_headers)
+        self.session.headers.update(self.headers)
+        self.cookies = custom_cookies or {}
         if custom_cookies:
             self.session.cookies.update(custom_cookies)
 
     def fetch_html(self, url: str) -> Tuple[str, str]:
-        """Fetch page content, returning final URL and HTML text."""
+        """
+        Fetch page content with browser impersonation.
+        Uses curl_cffi when available to bypass Cloudflare TLS fingerprints.
+        """
+        # Try curl_cffi with chrome120 TLS impersonation first
+        if HAS_CURL_CFFI:
+            try:
+                cffi_res = cffi_requests.get(
+                    url,
+                    headers=self.headers,
+                    cookies=self.cookies,
+                    impersonate="chrome120",
+                    timeout=15
+                )
+                if cffi_res.status_code == 200:
+                    return cffi_res.url, cffi_res.text
+            except Exception:
+                pass
+
+        # Fallback to standard requests session
         res = self.session.get(url, timeout=15)
-        res.raise_for_status()
         return res.url, res.text
 
-    def extract_candidates(
+    def extract_from_html(
         self,
-        target_url: str,
+        html: str,
+        base_url: str,
         custom_selectors: Optional[Dict[str, str]] = None,
         check_dimensions: bool = True
     ) -> Dict[str, Any]:
         """
-        Scrape magazine covers and titles from a target URL.
-        Supports automatic heuristic detection and custom CSS selector overrides.
+        Extract magazine covers directly from raw HTML string.
+        Enables pasting HTML from browser when Cloudflare blocks direct scraping.
         """
-        final_url, html = self.fetch_html(target_url)
         soup = BeautifulSoup(html, "lxml")
-        
         page_title = clean_text(soup.title.string if soup.title else "")
-        results = []
 
-        # 1. Check custom selectors if provided by user
+        # Check for Cloudflare challenge
+        is_blocked = is_cloudflare_challenge(html, page_title)
+        if is_blocked:
+            return {
+                "source_url": base_url,
+                "page_title": page_title,
+                "total_items": 0,
+                "items": [],
+                "is_cloudflare_blocked": True,
+                "warning": "Cloudflare / Bot Challenge detected on this page. If you are scraping a direct URL, please open the website in your browser, press Ctrl+U (View Source), copy the HTML, and paste it into the 'Paste HTML Source' tab in SoupCover."
+            }
+
+        results = []
         if custom_selectors and custom_selectors.get("item_container"):
-            results = self._scrape_with_selectors(soup, final_url, custom_selectors)
+            results = self._scrape_with_selectors(soup, base_url, custom_selectors)
         else:
-            # 2. Heuristic multi-item / catalog extraction
-            results = self._scrape_catalog_heuristics(soup, final_url)
-            
-            # 3. If catalog heuristics found nothing or page is a single issue / detail view
+            results = self._scrape_catalog_heuristics(soup, base_url)
             if not results:
-                single_item = self._scrape_single_issue(soup, final_url, page_title)
+                single_item = self._scrape_single_issue(soup, base_url, page_title)
                 if single_item:
                     results.append(single_item)
 
-        # Enhance with high-res candidate checking and dimensions
         enhanced_results = []
         for idx, item in enumerate(results):
             high_res_url = item.get("high_res_url") or transform_to_high_res(item.get("image_url", ""))
             item["high_res_url"] = high_res_url
             
-            # Attempt to verify high-res URL availability
-            if high_res_url != item.get("image_url"):
-                try:
-                    head_res = self.session.head(high_res_url, timeout=4, allow_redirects=True)
-                    if head_res.status_code != 200:
-                        # Fallback to original image_url if transformed 404s
-                        item["high_res_url"] = item.get("image_url")
-                except Exception:
-                    item["high_res_url"] = item.get("image_url")
-
             # Check dimensions if requested
             if check_dimensions and item.get("high_res_url"):
                 w, h, size_bytes, fmt = probe_image_dimensions(item["high_res_url"], self.session)
@@ -233,7 +267,6 @@ class MagazineScraper:
                     item["file_size_formatted"] = f"{round(size_bytes / 1024, 1)} KB" if size_bytes < 1048576 else f"{round(size_bytes / 1048576, 2)} MB"
                 item["format"] = fmt
 
-            # Extract clean issue info if not already found
             if not item.get("issue"):
                 item["issue"] = extract_issue_info(item.get("title", "")) or extract_issue_info(page_title)
 
@@ -241,11 +274,27 @@ class MagazineScraper:
             enhanced_results.append(item)
 
         return {
-            "source_url": final_url,
+            "source_url": base_url,
             "page_title": page_title,
             "total_items": len(enhanced_results),
-            "items": enhanced_results
+            "items": enhanced_results,
+            "is_cloudflare_blocked": False
         }
+
+    def extract_candidates(
+        self,
+        target_url: str,
+        custom_selectors: Optional[Dict[str, str]] = None,
+        check_dimensions: bool = True
+    ) -> Dict[str, Any]:
+        """Scrape magazine covers and titles from a target URL."""
+        final_url, html = self.fetch_html(target_url)
+        return self.extract_from_html(
+            html=html,
+            base_url=final_url,
+            custom_selectors=custom_selectors,
+            check_dimensions=check_dimensions
+        )
 
     def _scrape_with_selectors(self, soup: BeautifulSoup, base_url: str, selectors: Dict[str, str]) -> List[Dict[str, Any]]:
         """Scrape items using explicit user-defined CSS selectors."""
@@ -289,18 +338,18 @@ class MagazineScraper:
         if not img_tag:
             return None
         
-        # 1. Check srcset / data-srcset first (most accurate high-res source)
+        # 1. Check srcset / data-srcset first (highest resolution)
         for attr in ('srcset', 'data-srcset', 'data-src-retina'):
             if img_tag.get(attr):
                 best_srcset = parse_srcset_highest_res(img_tag[attr], base_url)
                 if best_srcset:
                     return best_srcset
 
-        # 2. Check high-res lazy/zoom attributes
+        # 2. Check high-res lazy attributes
         highres_attrs = [
             'data-zoom-image', 'data-highres', 'data-large', 'data-original',
             'data-full-image', 'data-full', 'data-orig-file', 'data-src-zoom',
-            'data-src', 'data-lazy-src', 'data-image', 'src'
+            'data-src', 'data-lazy-src', 'data-echo', 'data-image', 'src'
         ]
         for attr in highres_attrs:
             val = img_tag.get(attr)
@@ -322,19 +371,18 @@ class MagazineScraper:
         items = []
         seen_images = set()
 
-        # Potential card container selectors
+        # Potential card container selectors (includes SoftArchive, Sanet, WordPress, Shopify, Magzter)
         container_classes = [
-            'article', 'figure', 'div.card', 'div.item', 'div.issue', 'div.cover',
-            'div.magazine', 'div.post', 'li.product', 'div.product', 'div.entry',
-            '.magazine-item', '.issue-card', '.book-item', '.cover-wrap', '.thumb'
+            'article', 'figure', 'div.cell', 'div.story', 'div.news', 'div.short_story',
+            'div.card', 'div.item', 'div.issue', 'div.cover', 'div.magazine', 'div.post',
+            'li.product', 'div.product', 'div.entry', '.magazine-item', '.issue-card',
+            '.book-item', '.cover-wrap', '.thumb', '.post_box', '.list-item', '.grid-item'
         ]
         
-        # Collect candidate elements
         elements = []
         for selector in container_classes:
             elements.extend(soup.select(selector))
 
-        # Filter elements that contain both an image and some text
         for el in elements:
             img = el.find('img')
             if not img:
@@ -356,11 +404,11 @@ class MagazineScraper:
 
             # Extract title: look for heading or link text inside the element
             title = ""
-            for tag in ('h1', 'h2', 'h3', 'h4', 'h5', '.title', '.name', 'strong', 'a'):
+            for tag in ('h1', 'h2.title', '.title', 'h2', 'h3', 'h4', '.cell_title', '.story_title', '.name', 'strong', 'a'):
                 t_elem = el.select_one(tag)
                 if t_elem:
                     t_text = clean_text(t_elem.get_text())
-                    if len(t_text) > 2 and not any(skip in t_text.lower() for skip in ['read more', 'download', 'pdf', 'zoom']):
+                    if len(t_text) > 2 and not any(skip in t_text.lower() for skip in ['read more', 'download', 'pdf', 'zoom', 'comments']):
                         title = clean_magazine_title(t_text)
                         break
 
@@ -381,7 +429,7 @@ class MagazineScraper:
                 "issue": extract_issue_info(title)
             })
 
-            if len(items) >= 60:  # Reasonable ceiling per scrape
+            if len(items) >= 80:  # Allow up to 80 items per scrape
                 break
 
         return items
@@ -389,12 +437,10 @@ class MagazineScraper:
     def _scrape_single_issue(self, soup: BeautifulSoup, base_url: str, page_title: str) -> Optional[Dict[str, Any]]:
         """Extract primary cover image and magazine title from a single issue / detail page."""
         title = ""
-        # 1. H1 title
         h1 = soup.find('h1')
         if h1:
             title = clean_magazine_title(h1.get_text())
         
-        # 2. OpenGraph title
         if not title:
             og_title = soup.find('meta', property='og:title')
             if og_title and og_title.get('content'):
@@ -403,15 +449,11 @@ class MagazineScraper:
         if not title:
             title = clean_magazine_title(page_title)
 
-        # Find cover image
         cover_img_url = None
-
-        # 1. OpenGraph image (often high-res preview)
         og_image = soup.find('meta', property='og:image')
         if og_image and og_image.get('content'):
             cover_img_url = urljoin(base_url, og_image['content'].strip())
 
-        # 2. Main content image or elements with 'cover' class
         if not cover_img_url:
             cover_candidates = soup.select(
                 'img.cover, .cover img, [class*="cover"] img, [id*="cover"] img, article img, figure img, .main-image img'
@@ -422,7 +464,6 @@ class MagazineScraper:
                     cover_img_url = cand
                     break
 
-        # 3. First large image on page
         if not cover_img_url:
             for img in soup.find_all('img'):
                 cand = self._extract_best_img_url(img, base_url)
