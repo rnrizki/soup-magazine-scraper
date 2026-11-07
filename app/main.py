@@ -49,6 +49,7 @@ class ZipDownloadRequest(BaseModel):
 
 # Health check
 @app.get("/api/health")
+@app.head("/api/health")
 def health():
     return {"status": "ok", "app": "soup-magazine-scraper", "version": "1.0.0"}
 
@@ -174,6 +175,7 @@ if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.get("/", response_class=HTMLResponse)
+@app.head("/")
 def index_page():
     index_path = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(index_path):

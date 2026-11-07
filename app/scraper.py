@@ -289,21 +289,14 @@ class MagazineScraper:
         if not img_tag:
             return None
         
-        # 1. Check parent link to image (common pattern: <a href="full-cover.jpg"><img src="thumb.jpg"></a>)
-        parent_a = img_tag.find_parent('a')
-        if parent_a and parent_a.get('href'):
-            href = parent_a['href'].strip()
-            if any(href.lower().endswith(ext) or ext in href.lower() for ext in IMAGE_EXTENSIONS):
-                return urljoin(base_url, href)
-
-        # 2. Check srcset / data-srcset
+        # 1. Check srcset / data-srcset first (most accurate high-res source)
         for attr in ('srcset', 'data-srcset', 'data-src-retina'):
             if img_tag.get(attr):
                 best_srcset = parse_srcset_highest_res(img_tag[attr], base_url)
                 if best_srcset:
                     return best_srcset
 
-        # 3. Check high-res lazy attributes
+        # 2. Check high-res lazy/zoom attributes
         highres_attrs = [
             'data-zoom-image', 'data-highres', 'data-large', 'data-original',
             'data-full-image', 'data-full', 'data-orig-file', 'data-src-zoom',
@@ -313,6 +306,14 @@ class MagazineScraper:
             val = img_tag.get(attr)
             if val and not val.startswith('data:image'):
                 return urljoin(base_url, val.strip())
+
+        # 3. Check parent link to image (only if href is an actual image file, not an HTML page)
+        parent_a = img_tag.find_parent('a')
+        if parent_a and parent_a.get('href'):
+            href = parent_a['href'].strip()
+            parsed_path = urlparse(href).path.lower()
+            if any(parsed_path.endswith(ext) for ext in IMAGE_EXTENSIONS) and not any(p in href.lower() for p in ['/wiki/file:', '/attachment/', '.html', '.php']):
+                return urljoin(base_url, href)
 
         return None
 
