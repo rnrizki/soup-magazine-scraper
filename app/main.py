@@ -12,7 +12,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl
 
-from app.scraper import MagazineScraper, clean_magazine_title, DEFAULT_HEADERS
+from bs4 import BeautifulSoup
+from app.scraper import (
+    MagazineScraper, clean_magazine_title, clean_text, DEFAULT_HEADERS,
+    extract_single_magazine_rapidgator, extract_entries_from_html,
+    is_cloudflare_challenge
+)
 
 app = FastAPI(
     title="SoupCover - High-Res Magazine Cover Scraper",
@@ -57,6 +62,12 @@ class ZipDownloadItem(BaseModel):
 
 class ZipDownloadRequest(BaseModel):
     items: List[ZipDownloadItem]
+
+class BulkRapidgatorRequest(BaseModel):
+    urls: Optional[List[str]] = None
+    raw_html: Optional[str] = None
+    base_url: Optional[str] = "https://softarchive.download"
+    custom_cookies: Optional[Dict[str, str]] = None
 
 # Health check
 @app.api_route("/api/health", methods=["GET", "HEAD"])
@@ -239,6 +250,94 @@ def download_zip(payload: ZipDownloadRequest):
             "Access-Control-Expose-Headers": "Content-Disposition"
         }
     )
+
+# Bulk Rapidgator & Filehost Links Extractor
+@app.post("/api/bulk-rapidgator")
+def bulk_rapidgator(req: BulkRapidgatorRequest):
+    # Case 1: Raw HTML provided
+    if req.raw_html and len(req.raw_html.strip()) > 10:
+        base_url = (req.base_url or "https://softarchive.download").strip()
+        items = extract_entries_from_html(req.raw_html, base_url)
+        return {
+            "mode": "html",
+            "total_items": len(items),
+            "found_links_count": sum(1 for i in items if i.get("rapidgator_url")),
+            "items": items
+        }
+
+    # Case 2: List of URLs provided
+    if not req.urls:
+        raise HTTPException(status_code=400, detail="Please provide URLs or paste raw HTML")
+
+    clean_urls = []
+    for u in req.urls:
+        u_str = u.strip()
+        if u_str:
+            if not u_str.startswith("http://") and not u_str.startswith("https://"):
+                u_str = "https://" + u_str
+            clean_urls.append(u_str)
+
+    if not clean_urls:
+        raise HTTPException(status_code=400, detail="No valid URLs provided")
+
+    scraper = MagazineScraper(custom_cookies=req.custom_cookies)
+    results = []
+
+    def process_url(idx: int, target_url: str) -> Dict[str, Any]:
+        try:
+            final_url, html = scraper.fetch_html(target_url)
+            soup = BeautifulSoup(html, "lxml")
+            page_title = clean_text(soup.title.string if soup.title else "")
+            
+            if is_cloudflare_challenge(html, page_title):
+                return {
+                    "id": idx + 1,
+                    "title": page_title or "Cloudflare Verification",
+                    "rapidgator_url": "",
+                    "rapidgator_links": [],
+                    "nitroflare_links": [],
+                    "file_size": "",
+                    "source_url": target_url,
+                    "status": "cloudflare_blocked",
+                    "error": "Cloudflare security check blocked direct server fetch"
+                }
+
+            data = extract_single_magazine_rapidgator(html, final_url)
+            data["id"] = idx + 1
+            return data
+        except Exception as e:
+            return {
+                "id": idx + 1,
+                "title": "Failed to fetch",
+                "rapidgator_url": "",
+                "rapidgator_links": [],
+                "nitroflare_links": [],
+                "file_size": "",
+                "source_url": target_url,
+                "status": "error",
+                "error": str(e)
+            }
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        future_to_url = {
+            executor.submit(process_url, idx, url): idx 
+            for idx, url in enumerate(clean_urls[:50])
+        }
+        for future in concurrent.futures.as_completed(future_to_url):
+            try:
+                res = future.result()
+                results.append(res)
+            except Exception:
+                pass
+
+    results.sort(key=lambda x: x.get("id", 0))
+
+    return {
+        "mode": "urls",
+        "total_items": len(results),
+        "found_links_count": sum(1 for i in results if i.get("rapidgator_url")),
+        "items": results
+    }
 
 # Serve Web GUI Frontend
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")

@@ -533,3 +533,165 @@ class MagazineScraper:
                 "issue": extract_issue_info(title) or extract_issue_info(page_title)
             }
         return None
+
+# ==========================================
+# Rapidgator & Filehost Extractor Features
+# ==========================================
+
+from urllib.parse import unquote
+
+def extract_filehost_links(html_text: str, soup: Optional[BeautifulSoup] = None) -> Dict[str, List[str]]:
+    """
+    Extract Rapidgator, Nitroflare, DDownload, Katfile, and other filehost links
+    from HTML text and BeautifulSoup DOM.
+    """
+    rapidgator_links = set()
+    nitroflare_links = set()
+    ddownload_links = set()
+    katfile_links = set()
+    other_links = set()
+
+    # 1. Regex search across raw HTML for direct Rapidgator URLs
+    rg_matches = re.findall(
+        r'https?://(?:www\.)?(?:rapidgator\.net|rg\.to)/file/[a-zA-Z0-9_\-\./]+(?:\.html)?',
+        html_text,
+        re.IGNORECASE
+    )
+    for m in rg_matches:
+        rapidgator_links.add(m.rstrip('.'))
+
+    # 2. Check encoded redirect links (e.g. /redirect?url=https%3A%2F%2Frapidgator...)
+    redirect_matches = re.findall(
+        r'(?:url|link|target|goto|href)=(https%3A%2F%2F(?:www\.)?(?:rapidgator\.net|rg\.to)[^&"\'\s>]+)',
+        html_text,
+        re.IGNORECASE
+    )
+    for r in redirect_matches:
+        try:
+            rapidgator_links.add(unquote(r).rstrip('.'))
+        except Exception:
+            pass
+
+    # 3. Check anchor tags and data attributes if soup is available
+    if soup:
+        for a in soup.find_all('a'):
+            href = a.get('href', '').strip()
+            # Direct or relative link
+            if 'rapidgator.net' in href.lower() or 'rg.to' in href.lower():
+                rapidgator_links.add(href.rstrip('.'))
+            elif 'nitroflare.com' in href.lower():
+                nitroflare_links.add(href.rstrip('.'))
+            elif 'ddownload.com' in href.lower() or 'ddl.to' in href.lower():
+                ddownload_links.add(href.rstrip('.'))
+            elif 'katfile.com' in href.lower():
+                katfile_links.add(href.rstrip('.'))
+
+            # Data attributes
+            for attr in ('data-url', 'data-href', 'data-link', 'data-target'):
+                dval = a.get(attr, '').strip()
+                if 'rapidgator.net' in dval.lower() or 'rg.to' in dval.lower():
+                    rapidgator_links.add(dval.rstrip('.'))
+
+    # 4. Also check Nitroflare / DDownload in raw HTML
+    nf_matches = re.findall(r'https?://(?:www\.)?nitroflare\.com/view/[a-zA-Z0-9_\-\./]+', html_text, re.IGNORECASE)
+    for m in nf_matches:
+        nitroflare_links.add(m.rstrip('.'))
+
+    ddl_matches = re.findall(r'https?://(?:www\.)?(?:ddownload\.com|ddl\.to)/[a-zA-Z0-9_\-\./]+', html_text, re.IGNORECASE)
+    for m in ddl_matches:
+        ddownload_links.add(m.rstrip('.'))
+
+    return {
+        "rapidgator": sorted(list(rapidgator_links)),
+        "nitroflare": sorted(list(nitroflare_links)),
+        "ddownload": sorted(list(ddownload_links)),
+        "katfile": sorted(list(katfile_links))
+    }
+
+def extract_page_file_size(text: str) -> Optional[str]:
+    """Extract file size string (e.g. 26 MB, 1.2 GB, 117 MB)."""
+    m = re.search(r'\b(\d+(?:\.\d+)?\s*(?:GB|MB|KB))\b', text, re.IGNORECASE)
+    if m:
+        return m.group(1).strip()
+    return None
+
+def extract_single_magazine_rapidgator(html: str, url: str) -> Dict[str, Any]:
+    """Parse single magazine page for Title, Rapidgator link, and metadata."""
+    soup = BeautifulSoup(html, "lxml")
+    page_title = clean_text(soup.title.string if soup.title else "")
+
+    # Extract title
+    title = ""
+    h1 = soup.find('h1')
+    if h1:
+        title = clean_magazine_title(h1.get_text())
+    if not title:
+        og_title = soup.find('meta', property='og:title')
+        if og_title and og_title.get('content'):
+            title = clean_magazine_title(og_title['content'])
+    if not title:
+        title = clean_magazine_title(page_title)
+
+    # Extract links
+    filehosts = extract_filehost_links(html, soup)
+    rg_links = filehosts.get("rapidgator", [])
+    primary_rg = rg_links[0] if rg_links else ""
+
+    # Extract file size
+    file_size = extract_page_file_size(soup.get_text()[:4000]) or ""
+
+    return {
+        "title": title or "Magazine Title",
+        "rapidgator_url": primary_rg,
+        "rapidgator_links": rg_links,
+        "nitroflare_links": filehosts.get("nitroflare", []),
+        "ddownload_links": filehosts.get("ddownload", []),
+        "file_size": file_size,
+        "source_url": url,
+        "status": "found" if primary_rg else "not_found"
+    }
+
+def extract_entries_from_html(html: str, base_url: str) -> List[Dict[str, Any]]:
+    """
+    Extract magazine entries from raw HTML (whether a single detail page or a multi-entry catalog page).
+    If the page has multiple .cell / .story / .post elements, extract title and rapidgator links for each.
+    """
+    soup = BeautifulSoup(html, "lxml")
+    containers = soup.select('div.cell, div.story, div.news, div.short_story, div.card, div.post, article')
+    items = []
+
+    if len(containers) > 1:
+        for idx, c in enumerate(containers):
+            title = ""
+            detail_link = ""
+            for tag in ('h2 a', '.cell_title a', '.title a', 'h2', 'h1', 'h3', '.title'):
+                t_el = c.select_one(tag)
+                if t_el:
+                    title = clean_magazine_title(t_el.get_text())
+                    if t_el.name == 'a' and t_el.get('href'):
+                        detail_link = urljoin(base_url, t_el['href'])
+                    break
+            
+            c_html = str(c)
+            links_data = extract_filehost_links(c_html, c)
+            rg_list = links_data.get("rapidgator", [])
+            primary_rg = rg_list[0] if rg_list else ""
+            file_size = extract_page_file_size(c.get_text()) or ""
+
+            if title:
+                items.append({
+                    "id": idx + 1,
+                    "title": title,
+                    "rapidgator_url": primary_rg,
+                    "rapidgator_links": rg_list,
+                    "nitroflare_links": links_data.get("nitroflare", []),
+                    "file_size": file_size,
+                    "source_url": detail_link or base_url,
+                    "status": "found" if primary_rg else ("has_detail_link" if detail_link else "not_found")
+                })
+        if items:
+            return items
+
+    single = extract_single_magazine_rapidgator(html, base_url)
+    single["id"] = 1
+    return [single]

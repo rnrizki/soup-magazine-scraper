@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SoupCover · High-Res Magazine Cover Scraper</title>
+  <title>SoupCover · Magazine Cover & Rapidgator Bulk Extractor</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -49,312 +49,390 @@
         <div>
           <div class="flex items-center space-x-2">
             <h1 class="font-extrabold text-lg text-white tracking-tight">Soup<span class="text-fuchsia-400">Cover</span></h1>
-            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-fuchsia-950/80 text-fuchsia-400 border border-fuchsia-800/60 font-semibold">BS4 + Requests</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-fuchsia-950/80 text-fuchsia-400 border border-fuchsia-800/60 font-semibold">BS4 + Rapidgator</span>
           </div>
-          <p class="text-xs text-slate-400 hidden sm:block">High-Resolution Magazine Cover & Title Scraper</p>
+          <p class="text-xs text-slate-400 hidden sm:block">Magazine Cover & Rapidgator Links Bulk Scraper</p>
         </div>
       </div>
 
       <div class="flex items-center space-x-3">
-        <a href="https://github.com/rnrizki/soup-magazine-scraper" target="_blank" class="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+        <!-- Main Feature Switcher Nav -->
+        <div class="flex items-center p-1 rounded-xl bg-slate-900 border border-slate-800">
+          <button 
+            type="button" 
+            onclick="setAppMode('covers')" 
+            id="navBtnCovers"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-fuchsia-600 text-white shadow transition flex items-center space-x-1.5">
+            <i data-lucide="image" class="w-3.5 h-3.5"></i>
+            <span>Cover Scraper</span>
+          </button>
+          <button 
+            type="button" 
+            onclick="setAppMode('rapidgator')" 
+            id="navBtnRg"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+            <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i>
+            <span>Bulk Rapidgator & CSV</span>
+          </button>
+        </div>
+
+        <a href="https://github.com/rnrizki/soup-magazine-scraper" target="_blank" class="hidden sm:flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 transition">
           <i data-lucide="github" class="w-4 h-4"></i>
           <span>rnrizki</span>
         </a>
-        <div class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-950/50 text-emerald-400 border border-emerald-800/50 text-xs font-mono">
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>soup.lmrei.id</span>
-        </div>
       </div>
     </div>
   </header>
 
-  <!-- Main Content -->
+  <!-- Main Container -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
     
-    <!-- Hero / Input Card -->
-    <div class="glass-card rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-      <div class="absolute -top-24 -right-24 w-72 h-72 bg-fuchsia-600/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <!-- ======================================================== -->
+    <!-- MODE 1: COVER IMAGES SCRAPER                             -->
+    <!-- ======================================================== -->
+    <div id="sectionCovers" class="space-y-8">
+      <div class="glass-card rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        <div class="max-w-3xl mx-auto text-center space-y-3 mb-6">
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Scrape Magazine Covers in <span class="bg-gradient-to-r from-fuchsia-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">Ultra High-Res</span>
+          </h2>
+          <p class="text-sm text-slate-400">
+            Extract high-resolution cover artwork, magazine names, and issue dates from any magazine archive or website.
+          </p>
 
-      <div class="max-w-3xl mx-auto text-center space-y-3 mb-6">
-        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-          Scrape Magazine Covers in <span class="bg-gradient-to-r from-fuchsia-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">Ultra High-Res</span>
-        </h2>
-        <p class="text-sm text-slate-400">
-          Extract high-resolution cover artwork, magazine names, and issue dates from any magazine archive or website.
-        </p>
-
-        <!-- Method Tabs Switcher -->
-        <div class="inline-flex p-1 rounded-xl bg-slate-900 border border-slate-800 mt-2">
-          <button 
-            type="button" 
-            onclick="switchTab('url')" 
-            id="tabBtnUrl" 
-            class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-fuchsia-600 text-white shadow transition flex items-center space-x-1.5">
-            <i data-lucide="link" class="w-3.5 h-3.5"></i>
-            <span>Direct URL Scraper</span>
-          </button>
-          <button 
-            type="button" 
-            onclick="switchTab('html')" 
-            id="tabBtnHtml" 
-            class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
-            <i data-lucide="code" class="w-3.5 h-3.5"></i>
-            <span>Paste HTML Source (Cloudflare Bypass)</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Tab 1: URL Form -->
-      <form id="urlScrapeForm" onsubmit="handleUrlScrape(event)" class="max-w-4xl mx-auto space-y-4">
-        <div class="flex flex-col sm:flex-row gap-3">
-          <div class="relative flex-1">
-            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
-              <i data-lucide="globe" class="w-5 h-5"></i>
-            </div>
-            <input 
-              type="text" 
-              id="targetUrl" 
-              placeholder="https://softarchive.download/magazines/page-40 or any magazine page..." 
-              required
-              class="w-full pl-12 pr-10 py-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500 text-sm font-mono shadow-inner transition"
-            />
+          <!-- Tab Switcher for Covers Mode -->
+          <div class="inline-flex p-1 rounded-xl bg-slate-900 border border-slate-800 mt-2">
             <button 
               type="button" 
-              onclick="document.getElementById('targetUrl').value = ''; document.getElementById('targetUrl').focus();"
-              class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300">
-              <i data-lucide="x" class="w-4 h-4"></i>
+              onclick="switchCoverTab('url')" 
+              id="coverTabUrl" 
+              class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-fuchsia-600 text-white shadow transition flex items-center space-x-1.5">
+              <i data-lucide="link" class="w-3.5 h-3.5"></i>
+              <span>Direct URL</span>
+            </button>
+            <button 
+              type="button" 
+              onclick="switchCoverTab('html')" 
+              id="coverTabHtml" 
+              class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+              <i data-lucide="code" class="w-3.5 h-3.5"></i>
+              <span>Paste HTML (Cloudflare Bypass)</span>
             </button>
           </div>
-
-          <button 
-            type="submit" 
-            id="scrapeUrlBtn"
-            class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-fuchsia-600/25 transition active:scale-[0.98]">
-            <i data-lucide="sparkles" class="w-4 h-4"></i>
-            <span>Scrape Covers</span>
-          </button>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2 pt-2">
-          <label class="flex items-center space-x-2 cursor-pointer select-none">
-            <input type="checkbox" id="checkDimsUrl" checked class="w-4 h-4 rounded text-fuchsia-600 bg-slate-900 border-slate-700 focus:ring-fuchsia-500">
-            <span>Probe dimensions & file sizes via HTTP range requests</span>
-          </label>
-
-          <button 
-            type="button" 
-            onclick="toggleSettings()"
-            class="flex items-center space-x-1.5 text-slate-400 hover:text-fuchsia-400 transition font-medium">
-            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
-            <span>Custom Selectors & Cookies</span>
-          </button>
-        </div>
-      </form>
-
-      <!-- Tab 2: HTML Paste Form (Cloudflare Bypass) -->
-      <form id="htmlScrapeForm" onsubmit="handleHtmlScrape(event)" class="hidden max-w-4xl mx-auto space-y-4">
-        <div class="p-4 rounded-xl bg-indigo-950/40 border border-indigo-800/60 text-xs text-indigo-300 flex items-start space-x-3">
-          <i data-lucide="info" class="w-5 h-5 flex-shrink-0 text-indigo-400 mt-0.5"></i>
-          <div>
-            <span class="font-bold">Bypass Cloudflare / Security Check:</span>
-            <p class="mt-0.5 text-slate-300">
-              On Cloudflare-protected sites like <b>SoftArchive</b>, open the page in your browser, press <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white font-mono">Ctrl + U</kbd> (View Page Source), select all (<kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white font-mono">Ctrl + A</kbd>), copy (<kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white font-mono">Ctrl + C</kbd>), and paste the HTML below!
-            </p>
+        <!-- Cover URL Form -->
+        <form id="urlScrapeForm" onsubmit="handleUrlScrape(event)" class="max-w-4xl mx-auto space-y-4">
+          <div class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+                <i data-lucide="globe" class="w-5 h-5"></i>
+              </div>
+              <input 
+                type="text" 
+                id="targetUrl" 
+                placeholder="https://softarchive.download/magazines/page-40 or any magazine page..." 
+                required
+                class="w-full pl-12 pr-10 py-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500 text-sm font-mono shadow-inner transition"
+              />
+            </div>
+            <button 
+              type="submit" 
+              id="scrapeUrlBtn"
+              class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-fuchsia-600/25 transition">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              <span>Scrape Covers</span>
+            </button>
           </div>
-        </div>
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <label class="flex items-center space-x-2 cursor-pointer select-none">
+              <input type="checkbox" id="checkDimsUrl" checked class="w-4 h-4 rounded text-fuchsia-600 bg-slate-900 border-slate-700 focus:ring-fuchsia-500">
+              <span>Probe actual dimensions via HTTP range</span>
+            </label>
+          </div>
+        </form>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Target Base URL (for resolving image links):</label>
-          <input 
-            type="text" 
-            id="htmlBaseUrl" 
-            value="https://softarchive.download/magazines/page-40" 
-            class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-white text-xs font-mono focus:ring-2 focus:ring-fuchsia-500"
-          />
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">Paste HTML Source Code:</label>
-          <textarea 
-            id="rawHtmlInput" 
-            rows="7" 
-            placeholder="Paste raw page HTML source here (<!DOCTYPE html><html>...)..."
-            required
-            class="w-full p-3.5 bg-slate-900 border border-slate-700/80 rounded-xl text-white text-xs font-mono focus:ring-2 focus:ring-fuchsia-500"
-          ></textarea>
-        </div>
-
-        <div class="flex items-center justify-between">
-          <label class="flex items-center space-x-2 cursor-pointer select-none text-xs text-slate-400">
-            <input type="checkbox" id="checkDimsHtml" checked class="w-4 h-4 rounded text-fuchsia-600 bg-slate-900 border-slate-700 focus:ring-fuchsia-500">
-            <span>Probe dimensions & file sizes</span>
-          </label>
-
+        <!-- Cover HTML Form -->
+        <form id="htmlScrapeForm" onsubmit="handleHtmlScrape(event)" class="hidden max-w-4xl mx-auto space-y-4">
+          <div class="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-800/60 text-xs text-indigo-300 flex items-start space-x-2.5">
+            <i data-lucide="info" class="w-4 h-4 flex-shrink-0 text-indigo-400 mt-0.5"></i>
+            <div>
+              <span>Buka tab SoftArchive Anda, tekan <b>Ctrl + U</b> (View Source), tekan <b>Ctrl + A</b> lalu <b>Ctrl + C</b>, lalu paste HTML di bawah:</span>
+            </div>
+          </div>
+          <div>
+            <textarea 
+              id="rawHtmlInput" 
+              rows="6" 
+              placeholder="Paste raw page HTML source here (<!DOCTYPE html><html>...)..."
+              required
+              class="w-full p-3.5 bg-slate-900 border border-slate-700/80 rounded-xl text-white text-xs font-mono focus:ring-2 focus:ring-fuchsia-500"
+            ></textarea>
+          </div>
           <button 
             type="submit" 
             id="scrapeHtmlBtn"
-            class="px-6 py-3 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-semibold text-sm flex items-center space-x-2 shadow-lg shadow-fuchsia-600/25 transition">
+            class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center space-x-2 shadow-lg transition">
             <i data-lucide="file-code" class="w-4 h-4"></i>
             <span>Parse Covers from HTML</span>
           </button>
+        </form>
+      </div>
+
+      <!-- Cloudflare Challenge Alert Banner -->
+      <div id="cfAlertBanner" class="hidden p-5 rounded-2xl bg-amber-950/60 border border-amber-600/80 text-amber-200 space-y-3 shadow-xl">
+        <div class="flex items-center space-x-2 text-amber-400 font-bold text-sm">
+          <i data-lucide="shield-alert" class="w-5 h-5 flex-shrink-0"></i>
+          <span>Cloudflare Security Verification Detected!</span>
         </div>
-      </form>
+        <p class="text-xs text-amber-100/90">
+          Situs ini diproteksi oleh Cloudflare Turnstile. Buka tab situs di browser Anda, tekan <b>Ctrl + U</b> (View Source), salin seluruh HTML, lalu klik tombol di bawah untuk paste HTML.
+        </p>
+        <button 
+          type="button" 
+          onclick="switchCoverTab('html'); document.getElementById('cfAlertBanner').classList.add('hidden');"
+          class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs flex items-center space-x-1.5 shadow transition">
+          <i data-lucide="arrow-right-circle" class="w-4 h-4"></i>
+          <span>Buka Tab "Paste HTML" Sekarang</span>
+        </button>
+      </div>
 
-      <!-- Advanced Selectors Settings Drawer -->
-      <div id="advancedSettings" class="hidden max-w-4xl mx-auto mt-4 p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Item Container Selector (optional)</label>
-            <input type="text" id="selContainer" placeholder="e.g. .cell, article, .story, .magazine-card" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Title Selector (optional)</label>
-            <input type="text" id="selTitle" placeholder="e.g. h2.title, .cell_title a" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Cover Image Selector (optional)</label>
-            <input type="text" id="selImage" placeholder="e.g. img.cover, a.thumb img" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-300 mb-1">Issue/Date Selector (optional)</label>
-            <input type="text" id="selIssue" placeholder="e.g. .issue, .date" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200">
-          </div>
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Custom Cookie (optional for logged-in sessions)</label>
-          <input type="text" id="customCookies" placeholder="e.g. session_id=xyz; cf_clearance=abc" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200">
-        </div>
-      </div>
-    </div>
-
-    <!-- Cloudflare Challenge Alert Banner -->
-    <div id="cfAlertBanner" class="hidden p-5 rounded-2xl bg-amber-950/60 border border-amber-600/80 text-amber-200 space-y-3 shadow-xl">
-      <div class="flex items-center space-x-2 text-amber-400 font-bold text-sm">
-        <i data-lucide="shield-alert" class="w-5 h-5 flex-shrink-0"></i>
-        <span>Cloudflare Security Verification Detected!</span>
-      </div>
-      <p class="text-xs text-amber-100/90 leading-relaxed">
-        Situs web ini memproteksi halamannya dengan Cloudflare Turnstile / Quick Security Check sehingga server di-block dari pengambilan data langsung.
-      </p>
-      <div class="p-3 bg-slate-900/80 rounded-xl border border-amber-800/60 text-xs space-y-2">
-        <div class="font-semibold text-white flex items-center space-x-1.5">
-          <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
-          <span>Solusi Cepat 10 Detik:</span>
-        </div>
-        <ol class="list-decimal list-inside space-y-1 text-slate-300 ml-1">
-          <li>Buka tab browser tempat Anda membuka halaman majalah tersebut.</li>
-          <li>Tekan <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white font-mono">Ctrl + U</kbd> (View Page Source).</li>
-          <li>Tekan <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white font-mono">Ctrl + A</kbd> lalu <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-white font-mono">Ctrl + C</kbd> untuk menyalin seluruh HTML-nya.</li>
-          <li>Klik tombol di bawah ini untuk pindah ke tab <b>Paste HTML Source</b> dan paste kode HTML tadi!</li>
-        </ol>
-      </div>
-      <button 
-        type="button" 
-        onclick="switchToHtmlTabWithNotice()"
-        class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs flex items-center space-x-1.5 shadow transition">
-        <i data-lucide="arrow-right-circle" class="w-4 h-4"></i>
-        <span>Buka Tab "Paste HTML Source" Sekarang</span>
-      </button>
-    </div>
-
-    <!-- Loading Indicator -->
-    <div id="loadingState" class="hidden text-center py-12 space-y-4">
-      <div class="inline-flex p-4 rounded-full bg-fuchsia-950/40 border border-fuchsia-800/50 animate-bounce">
-        <i data-lucide="loader-2" class="w-8 h-8 text-fuchsia-400 animate-spin"></i>
-      </div>
-      <div>
-        <h3 class="text-lg font-bold text-white">Scraping with Beautiful Soup & Requests...</h3>
-        <p id="loadingStatusText" class="text-xs text-slate-400 font-mono mt-1">Extracting covers and checking resolutions...</p>
-      </div>
-    </div>
-
-    <!-- Error Banner -->
-    <div id="errorBanner" class="hidden p-4 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 flex items-start space-x-3 text-sm">
-      <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0 text-rose-400 mt-0.5"></i>
-      <div class="flex-1">
-        <span class="font-bold">Error encountered:</span>
-        <span id="errorMessage" class="block font-mono text-xs mt-1 text-rose-200"></span>
-      </div>
-    </div>
-
-    <!-- Results Section -->
-    <div id="resultsSection" class="hidden space-y-6">
-      
-      <!-- Toolbar -->
-      <div class="glass-card rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="flex items-center space-x-4 w-full md:w-auto">
-          <div class="p-3 rounded-xl bg-fuchsia-950/80 border border-fuchsia-800/60 text-fuchsia-400">
-            <i data-lucide="layers" class="w-6 h-6"></i>
-          </div>
-          <div>
-            <div class="flex items-center space-x-2">
-              <h3 class="font-bold text-white text-base">Extracted Covers</h3>
-              <span id="itemCountBadge" class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono text-xs font-semibold">0 items</span>
+      <!-- Cover Results Section -->
+      <div id="resultsSection" class="hidden space-y-6">
+        <div class="glass-card rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="flex items-center space-x-3">
+            <div class="p-2.5 rounded-xl bg-fuchsia-950/80 border border-fuchsia-800/60 text-fuchsia-400">
+              <i data-lucide="layers" class="w-5 h-5"></i>
             </div>
-            <p id="sourceDomainText" class="text-xs text-slate-400 truncate max-w-md font-mono mt-0.5"></p>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h3 class="font-bold text-white text-sm">Extracted Covers</h3>
+                <span id="itemCountBadge" class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono text-xs font-semibold">0 items</span>
+              </div>
+              <p id="sourceDomainText" class="text-xs text-slate-400 truncate max-w-md font-mono mt-0.5"></p>
+            </div>
           </div>
-        </div>
 
-        <!-- Filter & Export Controls -->
-        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
-          <div class="relative flex-1 sm:flex-initial">
+          <div class="flex flex-wrap items-center gap-2">
             <input 
               type="text" 
               id="filterSearch" 
-              placeholder="Filter by magazine name..." 
+              placeholder="Filter title..." 
               oninput="filterCards()" 
-              class="w-full sm:w-56 pl-8 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-fuchsia-500 font-mono"
+              class="w-40 sm:w-52 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 font-mono"
             />
-            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5"></i>
+            <button 
+              type="button" 
+              onclick="downloadAllZip()" 
+              id="btnZip"
+              class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-medium text-xs flex items-center space-x-1.5 shadow transition">
+              <i data-lucide="file-archive" class="w-3.5 h-3.5"></i>
+              <span>Download All ZIP</span>
+            </button>
+            <button 
+              type="button" 
+              onclick="exportCsv()" 
+              id="btnCsv"
+              class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 font-medium text-xs flex items-center space-x-1.5 transition">
+              <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+              <span>CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="coversGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODE 2: BULK RAPIDGATOR LINKS & CSV EXTRACTOR            -->
+    <!-- ======================================================== -->
+    <div id="sectionRapidgator" class="hidden space-y-8">
+      <div class="glass-card rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        <div class="max-w-3xl mx-auto text-center space-y-3 mb-6">
+          <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-indigo-950/80 text-indigo-400 border border-indigo-800/60 text-xs font-semibold">
+            <i data-lucide="database" class="w-3.5 h-3.5"></i>
+            <span>Bulk Links & CSV Exporter</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Extract <span class="bg-gradient-to-r from-amber-400 via-orange-400 to-fuchsia-400 bg-clip-text text-transparent">Rapidgator Links</span> in Bulk
+          </h2>
+          <p class="text-sm text-slate-400">
+            Paste multiple magazine URLs (one per line) or paste raw HTML from magazine detail / catalog pages. Generates a clean CSV with <b>Judul Majalah</b> and <b>Link Rapidgator</b>!
+          </p>
+
+          <!-- Rapidgator Method Switcher -->
+          <div class="inline-flex p-1 rounded-xl bg-slate-900 border border-slate-800 mt-2">
+            <button 
+              type="button" 
+              onclick="switchRgInputTab('urls')" 
+              id="rgTabUrls" 
+              class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow transition flex items-center space-x-1.5">
+              <i data-lucide="list" class="w-3.5 h-3.5"></i>
+              <span>Bulk URLs Input (Multi-Sites)</span>
+            </button>
+            <button 
+              type="button" 
+              onclick="switchRgInputTab('html')" 
+              id="rgTabHtml" 
+              class="px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+              <i data-lucide="code" class="w-3.5 h-3.5"></i>
+              <span>Paste HTML (Direct / Cloudflare)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Rapidgator URLs Form -->
+        <form id="rgUrlsForm" onsubmit="handleRgBulkScrape(event)" class="max-w-4xl mx-auto space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+              <span>Paste Magazine URLs (one URL per line, supports up to 50 URLs):</span>
+              <button type="button" onclick="loadSampleRgUrls()" class="text-xs text-fuchsia-400 hover:underline">Insert Sample URLs</button>
+            </label>
+            <textarea 
+              id="rgUrlsInput" 
+              rows="6" 
+              placeholder="https://softarchive.download/books/magazines/cosmopolitan-uk-2026.html&#10;https://softarchive.download/books/magazines/natgeo-kids.html&#10;https://softarchive.download/books/magazines/samsung-galaxy.html"
+              required
+              class="w-full p-3.5 bg-slate-900 border border-slate-700/80 rounded-xl text-white text-xs font-mono focus:ring-2 focus:ring-indigo-500 shadow-inner"
+            ></textarea>
           </div>
 
-          <select id="filterRes" onchange="filterCards()" class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 font-mono focus:outline-none focus:ring-1 focus:ring-fuchsia-500">
-            <option value="all">All Resolutions</option>
-            <option value="highres">High Res Only (&gt;1000px)</option>
-            <option value="portrait">Portrait Covers Only</option>
-          </select>
+          <div class="flex items-center justify-between">
+            <p class="text-xs text-slate-400 font-mono">
+              <span id="rgUrlCounter">0</span> URLs detected
+            </p>
+            <button 
+              type="submit" 
+              id="btnRgExtractUrls"
+              class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 hover:from-indigo-500 hover:to-fuchsia-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg shadow-indigo-600/25 transition">
+              <i data-lucide="zap" class="w-4 h-4"></i>
+              <span>Extract Rapidgator Links</span>
+            </button>
+          </div>
+        </form>
 
-          <!-- Export buttons -->
+        <!-- Rapidgator HTML Form -->
+        <form id="rgHtmlForm" onsubmit="handleRgHtmlScrape(event)" class="hidden max-w-4xl mx-auto space-y-4">
+          <div class="p-3.5 rounded-xl bg-amber-950/40 border border-amber-800/60 text-xs text-amber-300 flex items-start space-x-2.5">
+            <i data-lucide="lightbulb" class="w-4 h-4 flex-shrink-0 text-amber-400 mt-0.5"></i>
+            <div>
+              <span><b>Trik Cepat:</b> Buka halaman majalah SoftArchive (misal <i>Cosmopolitan</i>), tekan <b>Ctrl + U</b>, salin seluruh kode HTML, dan tempel di bawah. Sistem akan mengekstrak judul dan link Rapidgator langsung 100%!</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Target Base URL (optional):</label>
+            <input 
+              type="text" 
+              id="rgBaseUrl" 
+              value="https://softarchive.download" 
+              class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-white text-xs font-mono"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Paste HTML Source:</label>
+            <textarea 
+              id="rgRawHtmlInput" 
+              rows="7" 
+              placeholder="Paste raw page HTML source here (<!DOCTYPE html><html>...)..."
+              required
+              class="w-full p-3.5 bg-slate-900 border border-slate-700/80 rounded-xl text-white text-xs font-mono focus:ring-2 focus:ring-indigo-500"
+            ></textarea>
+          </div>
           <button 
-            type="button" 
-            onclick="downloadAllZip()" 
-            id="btnZip"
-            class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium text-xs flex items-center space-x-1.5 shadow transition">
-            <i data-lucide="file-archive" class="w-3.5 h-3.5"></i>
-            <span>Download All ZIP</span>
+            type="submit" 
+            id="btnRgExtractHtml"
+            class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-fuchsia-600 hover:from-amber-500 hover:to-fuchsia-500 text-white font-semibold text-xs flex items-center space-x-2 shadow-lg transition">
+            <i data-lucide="file-code" class="w-4 h-4"></i>
+            <span>Parse Rapidgator from HTML</span>
           </button>
-
-          <button 
-            type="button" 
-            onclick="exportJson()" 
-            id="btnJson"
-            class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-200 font-medium text-xs flex items-center space-x-1.5 transition">
-            <i data-lucide="file-json" class="w-3.5 h-3.5"></i>
-            <span>JSON</span>
-          </button>
-
-          <button 
-            type="button" 
-            onclick="exportCsv()" 
-            id="btnCsv"
-            class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-200 font-medium text-xs flex items-center space-x-1.5 transition">
-            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
-            <span>CSV</span>
-          </button>
-        </div>
+        </form>
       </div>
 
-      <!-- Covers Visual Gallery -->
-      <div id="coversGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        <!-- Rendered dynamically -->
+      <!-- Rapidgator Results Table Section -->
+      <div id="rgResultsSection" class="hidden space-y-6">
+        <div class="glass-card rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="flex items-center space-x-3">
+            <div class="p-2.5 rounded-xl bg-amber-950/80 border border-amber-800/60 text-amber-400">
+              <i data-lucide="file-check-2" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h3 class="font-bold text-white text-sm">Extracted Rapidgator Data</h3>
+                <span id="rgStatsBadge" class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono text-xs font-semibold">0 items</span>
+              </div>
+              <p id="rgSubtitleText" class="text-xs text-slate-400 font-mono mt-0.5">Ready for CSV export and clipboard copy</p>
+            </div>
+          </div>
+
+          <!-- Rapidgator Export Buttons -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button 
+              type="button" 
+              onclick="downloadRapidgatorCsv()" 
+              id="btnRgCsv"
+              class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-lg shadow-emerald-600/20 transition active:scale-95">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+              <span>Download CSV (Judul & Link)</span>
+            </button>
+
+            <button 
+              type="button" 
+              onclick="copyAllRapidgatorLinks()" 
+              id="btnRgCopyAll"
+              class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center space-x-1.5 shadow transition active:scale-95">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+              <span>Copy All Rapidgator Links</span>
+            </button>
+
+            <button 
+              type="button" 
+              onclick="downloadRapidgatorJson()" 
+              class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center space-x-1.5 transition">
+              <i data-lucide="file-json" class="w-4 h-4"></i>
+              <span>JSON</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Rapidgator Table -->
+        <div class="glass-card rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs font-mono">
+              <thead>
+                <tr class="bg-slate-900/90 text-slate-400 border-b border-slate-800 uppercase tracking-wider text-[11px]">
+                  <th class="py-3 px-4 w-12 text-center">#</th>
+                  <th class="py-3 px-4 font-bold text-slate-200">Judul Majalah</th>
+                  <th class="py-3 px-4 font-bold text-slate-200">Link Rapidgator</th>
+                  <th class="py-3 px-3 w-28 text-center">Ukuran File</th>
+                  <th class="py-3 px-3 w-24 text-center">Status</th>
+                  <th class="py-3 px-3 w-24 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="rgTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Global Loading Indicator -->
+    <div id="globalLoading" class="hidden text-center py-12 space-y-4">
+      <div class="inline-flex p-4 rounded-full bg-indigo-950/40 border border-indigo-800/50 animate-bounce">
+        <i data-lucide="loader-2" class="w-8 h-8 text-indigo-400 animate-spin"></i>
+      </div>
+      <div>
+        <h3 id="loadingMainTitle" class="text-base font-bold text-white">Extracting Data with Beautiful Soup...</h3>
+        <p id="loadingStatusText" class="text-xs text-slate-400 font-mono mt-1">Processing requests...</p>
       </div>
     </div>
   </main>
 
   <!-- Lightbox Modal -->
   <div id="lightboxModal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-    <button onclick="closeLightbox()" class="absolute top-4 right-4 p-2 rounded-full bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700 transition">
+    <button onclick="closeLightbox()" class="absolute top-4 right-4 p-2 rounded-full bg-slate-800/80 text-slate-300 hover:text-white transition">
       <i data-lucide="x" class="w-6 h-6"></i>
     </button>
     <div class="max-w-4xl max-h-[90vh] flex flex-col items-center space-y-4">
@@ -362,16 +440,6 @@
       <div class="text-center space-y-1">
         <h4 id="lightboxTitle" class="text-base font-bold text-white"></h4>
         <div id="lightboxMeta" class="text-xs font-mono text-fuchsia-400"></div>
-        <div class="pt-2 flex items-center justify-center space-x-3">
-          <a id="lightboxDirectLink" href="#" target="_blank" class="text-xs text-sky-400 hover:underline flex items-center space-x-1">
-            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-            <span>Open Direct Image URL</span>
-          </a>
-          <button id="lightboxDownloadBtn" class="px-3 py-1 bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded text-xs font-medium flex items-center space-x-1">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i>
-            <span>Download</span>
-          </button>
-        </div>
       </div>
     </div>
   </div>
@@ -388,13 +456,35 @@
 
   <script>
     lucide.createIcons();
-    let currentScrapeData = null;
+    let currentCoverData = null;
+    let currentRgData = null;
 
-    function switchTab(tab) {
+    // App Mode Switcher (Covers vs Rapidgator)
+    function setAppMode(mode) {
+      const secCovers = document.getElementById('sectionCovers');
+      const secRg = document.getElementById('sectionRapidgator');
+      const btnCovers = document.getElementById('navBtnCovers');
+      const btnRg = document.getElementById('navBtnRg');
+
+      if (mode === 'covers') {
+        secCovers.classList.remove('hidden');
+        secRg.classList.add('hidden');
+        btnCovers.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-fuchsia-600 text-white shadow transition flex items-center space-x-1.5";
+        btnRg.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+      } else {
+        secCovers.classList.add('hidden');
+        secRg.classList.remove('hidden');
+        btnRg.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow transition flex items-center space-x-1.5";
+        btnCovers.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+      }
+      lucide.createIcons();
+    }
+
+    function switchCoverTab(tab) {
       const urlForm = document.getElementById('urlScrapeForm');
       const htmlForm = document.getElementById('htmlScrapeForm');
-      const btnUrl = document.getElementById('tabBtnUrl');
-      const btnHtml = document.getElementById('tabBtnHtml');
+      const btnUrl = document.getElementById('coverTabUrl');
+      const btnHtml = document.getElementById('coverTabHtml');
 
       if (tab === 'url') {
         urlForm.classList.remove('hidden');
@@ -410,18 +500,24 @@
       lucide.createIcons();
     }
 
-    function switchToHtmlTabWithNotice() {
-      switchTab('html');
-      const targetUrl = document.getElementById('targetUrl').value.trim();
-      if (targetUrl) {
-        document.getElementById('htmlBaseUrl').value = targetUrl;
-      }
-      document.getElementById('rawHtmlInput').focus();
-      document.getElementById('cfAlertBanner').classList.add('hidden');
-    }
+    function switchRgInputTab(tab) {
+      const urlsForm = document.getElementById('rgUrlsForm');
+      const htmlForm = document.getElementById('rgHtmlForm');
+      const btnUrls = document.getElementById('rgTabUrls');
+      const btnHtml = document.getElementById('rgTabHtml');
 
-    function toggleSettings() {
-      document.getElementById('advancedSettings').classList.toggle('hidden');
+      if (tab === 'urls') {
+        urlsForm.classList.remove('hidden');
+        htmlForm.classList.add('hidden');
+        btnUrls.className = "px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow transition flex items-center space-x-1.5";
+        btnHtml.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+      } else {
+        urlsForm.classList.add('hidden');
+        htmlForm.classList.remove('hidden');
+        btnHtml.className = "px-4 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 text-white shadow transition flex items-center space-x-1.5";
+        btnUrls.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+      }
+      lucide.createIcons();
     }
 
     function showToast(msg) {
@@ -433,250 +529,104 @@
       }, 3000);
     }
 
+    // Update URL Counter on input
+    const rgUrlsInput = document.getElementById('rgUrlsInput');
+    if (rgUrlsInput) {
+      rgUrlsInput.addEventListener('input', () => {
+        const urls = rgUrlsInput.value.split('\n').map(s => s.trim()).filter(Boolean);
+        document.getElementById('rgUrlCounter').innerText = urls.length;
+      });
+    }
+
+    function loadSampleRgUrls() {
+      const sample = `https://softarchive.download/magazines/cosmopolitan-uk-august-september-2026\nhttps://softarchive.download/magazines/national-geographic-kids-issue-139-2026\nhttps://softarchive.download/magazines/samsung-galaxy-complete-manual-28th-edition-2026`;
+      document.getElementById('rgUrlsInput').value = sample;
+      document.getElementById('rgUrlCounter').innerText = 3;
+    }
+
+    // ==========================================
+    // COVER SCRAPER HANDLERS
+    // ==========================================
     async function handleUrlScrape(e) {
       e.preventDefault();
       const url = document.getElementById('targetUrl').value.trim();
       if (!url) return;
 
-      const checkDims = document.getElementById('checkDimsUrl').checked;
-      const selContainer = document.getElementById('selContainer').value.trim();
-      const selTitle = document.getElementById('selTitle').value.trim();
-      const selImage = document.getElementById('selImage').value.trim();
-      const selIssue = document.getElementById('selIssue').value.trim();
-      const customCookiesStr = document.getElementById('customCookies').value.trim();
-
-      const custom_selectors = selContainer ? {
-        item_container: selContainer,
-        title: selTitle,
-        image: selImage,
-        issue: selIssue
-      } : null;
-
-      let custom_cookies = null;
-      if (customCookiesStr) {
-        custom_cookies = {};
-        customCookiesStr.split(';').forEach(part => {
-          const [k, v] = part.split('=');
-          if (k && v) custom_cookies[k.trim()] = v.trim();
-        });
-      }
-
-      showLoading(true);
-
+      setLoading(true, "Scraping Covers from URL...");
       try {
         const resp = await fetch('/api/scrape', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            url: url,
-            custom_selectors: custom_selectors,
-            custom_cookies: custom_cookies,
-            check_dimensions: checkDims
-          })
+          body: JSON.stringify({ url: url, check_dimensions: true })
         });
-
-        if (!resp.ok) {
-          const errData = await resp.json().catch(() => ({}));
-          throw new Error(errData.detail || `Server error: ${resp.status}`);
-        }
-
         const data = await resp.json();
-        currentScrapeData = data;
-
+        currentCoverData = data;
         if (data.is_cloudflare_blocked) {
           document.getElementById('cfAlertBanner').classList.remove('hidden');
         } else {
           document.getElementById('cfAlertBanner').classList.add('hidden');
         }
-
-        renderResults(data);
+        renderCoverResults(data);
       } catch (err) {
-        document.getElementById('errorBanner').classList.remove('hidden');
-        document.getElementById('errorMessage').innerText = err.message;
+        alert("Error: " + err.message);
       } finally {
-        showLoading(false);
+        setLoading(false);
       }
     }
 
     async function handleHtmlScrape(e) {
       e.preventDefault();
       const html = document.getElementById('rawHtmlInput').value.trim();
-      const baseUrl = document.getElementById('htmlBaseUrl').value.trim() || 'https://softarchive.download';
-      const checkDims = document.getElementById('checkDimsHtml').checked;
-
       if (!html) return;
 
-      showLoading(true);
-
+      setLoading(true, "Parsing Covers from HTML...");
       try {
         const resp = await fetch('/api/scrape-html', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            html: html,
-            base_url: baseUrl,
-            check_dimensions: checkDims
-          })
+          body: JSON.stringify({ html: html, check_dimensions: true })
         });
-
-        if (!resp.ok) {
-          const errData = await resp.json().catch(() => ({}));
-          throw new Error(errData.detail || `Server error: ${resp.status}`);
-        }
-
         const data = await resp.json();
-        currentScrapeData = data;
+        currentCoverData = data;
         document.getElementById('cfAlertBanner').classList.add('hidden');
-        renderResults(data);
-        showToast(`Successfully extracted ${data.total_items} covers!`);
+        renderCoverResults(data);
+        showToast(`Found ${data.total_items} covers!`);
       } catch (err) {
-        document.getElementById('errorBanner').classList.remove('hidden');
-        document.getElementById('errorMessage').innerText = err.message;
+        alert("Error: " + err.message);
       } finally {
-        showLoading(false);
+        setLoading(false);
       }
     }
 
-    function showLoading(isLoading) {
-      const loadEl = document.getElementById('loadingState');
-      const errEl = document.getElementById('errorBanner');
-      const resEl = document.getElementById('resultsSection');
-      const btnUrl = document.getElementById('scrapeUrlBtn');
-      const btnHtml = document.getElementById('scrapeHtmlBtn');
-
-      if (isLoading) {
-        loadEl.classList.remove('hidden');
-        errEl.classList.add('hidden');
-        resEl.classList.add('hidden');
-        if (btnUrl) btnUrl.disabled = true;
-        if (btnHtml) btnHtml.disabled = true;
-      } else {
-        loadEl.classList.add('hidden');
-        if (btnUrl) btnUrl.disabled = false;
-        if (btnHtml) btnHtml.disabled = false;
-      }
-      lucide.createIcons();
-    }
-
-    function renderResults(data) {
+    function renderCoverResults(data) {
       document.getElementById('resultsSection').classList.remove('hidden');
       document.getElementById('itemCountBadge').innerText = `${data.total_items} items found`;
       document.getElementById('sourceDomainText').innerText = `${data.page_title ? data.page_title + ' · ' : ''}${data.source_url}`;
 
-      // Enable/disable buttons based on items count
-      const hasItems = data.items && data.items.length > 0;
-      document.getElementById('btnZip').disabled = !hasItems;
-      document.getElementById('btnCsv').disabled = !hasItems;
-      document.getElementById('btnJson').disabled = !hasItems;
-
-      filterCards();
-    }
-
-    function filterCards() {
-      if (!currentScrapeData || !currentScrapeData.items) return;
-      const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
-      const resFilter = document.getElementById('filterRes').value;
-
-      const filtered = currentScrapeData.items.filter(item => {
-        const matchesSearch = !searchTerm || 
-          (item.title && item.title.toLowerCase().includes(searchTerm)) ||
-          (item.issue && item.issue.toLowerCase().includes(searchTerm));
-
-        let matchesRes = true;
-        if (resFilter === 'highres') {
-          matchesRes = item.is_high_res || (item.width && item.width >= 1000) || (item.height && item.height >= 1400);
-        } else if (resFilter === 'portrait') {
-          matchesRes = item.is_portrait === true;
-        }
-
-        return matchesSearch && matchesRes;
-      });
-
-      renderGrid(filtered);
-    }
-
-    function renderGrid(items) {
       const grid = document.getElementById('coversGrid');
-      if (items.length === 0) {
-        grid.innerHTML = `
-          <div class="col-span-full text-center py-12 glass-card rounded-2xl">
-            <i data-lucide="image-off" class="w-10 h-10 mx-auto text-slate-500 mb-2"></i>
-            <p class="text-sm text-slate-400">No magazine covers matched the criteria.</p>
-          </div>
-        `;
-        lucide.createIcons();
+      if (!data.items || data.items.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-12 glass-card rounded-2xl text-slate-400">No magazine covers found.</div>`;
         return;
       }
 
-      grid.innerHTML = items.map(item => {
+      grid.innerHTML = data.items.map(item => {
         const proxyImgUrl = `/api/proxy-image?url=${encodeURIComponent(item.high_res_url || item.image_url)}`;
-        const resText = item.resolution ? `${item.resolution}` : 'Cover Preview';
-        const isHd = item.is_high_res;
-        const resBadgeClass = isHd 
-          ? 'bg-emerald-950/80 text-emerald-400 border-emerald-700/80 font-bold'
-          : 'bg-slate-900/80 text-slate-300 border-slate-700';
-
+        const resBadge = item.resolution ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-mono border backdrop-blur bg-emerald-950/80 text-emerald-400 border-emerald-700/80 font-bold">${item.resolution}</span>` : '';
         const sizeBadge = item.file_size_formatted ? `<span class="px-2 py-0.5 rounded bg-slate-900/80 text-slate-400 border border-slate-800 text-[10px] font-mono">${item.file_size_formatted}</span>` : '';
-        const issueBadge = item.issue ? `<span class="px-2 py-0.5 rounded bg-fuchsia-950/80 text-fuchsia-400 border border-fuchsia-800/80 text-[10px] font-mono font-medium">${item.issue}</span>` : '';
 
         return `
           <div class="glass-card rounded-2xl overflow-hidden group hover:border-fuchsia-500/40 transition duration-300 flex flex-col shadow-lg">
             <div class="relative bg-slate-900 aspect-[3/4] overflow-hidden flex items-center justify-center cursor-pointer" onclick='openLightbox(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
-              <img 
-                src="${proxyImgUrl}" 
-                alt="${item.title}" 
-                loading="lazy"
-                onerror="this.onerror=null; this.src='${item.high_res_url || item.image_url}';"
-                class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60"></div>
-              
-              <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono border backdrop-blur ${resBadgeClass}">
-                  ${isHd ? '★ ' : ''}${resText}
-                </span>
-                ${sizeBadge}
-              </div>
-
-              <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-200 bg-black/40 backdrop-blur-[2px]">
-                <span class="px-3 py-1.5 rounded-lg bg-slate-900/90 text-white text-xs font-medium flex items-center space-x-1.5 border border-slate-700 shadow-xl">
-                  <i data-lucide="zoom-in" class="w-3.5 h-3.5 text-fuchsia-400"></i>
-                  <span>Inspect Full-Res</span>
-                </span>
-              </div>
+              <img src="${proxyImgUrl}" alt="${item.title}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-500"/>
+              <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">${resBadge}${sizeBadge}</div>
             </div>
-
             <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-              <div>
-                <div class="flex items-center space-x-1.5 mb-1">
-                  ${issueBadge}
-                  ${item.format ? `<span class="text-[10px] font-mono text-slate-500 uppercase">${item.format}</span>` : ''}
-                </div>
-                <h4 class="font-bold text-sm text-white line-clamp-2 hover:text-fuchsia-300 transition" title="${item.title}">
-                  ${item.title}
-                </h4>
-              </div>
-
-              <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                <button 
-                  onclick='downloadSingleCover("${item.high_res_url || item.image_url}", "${item.title.replace(/"/g, '&quot;')}")'
-                  class="flex-1 py-1.5 px-2.5 rounded-lg bg-fuchsia-600/90 hover:bg-fuchsia-600 text-white text-xs font-semibold flex items-center justify-center space-x-1 transition shadow-sm">
-                  <i data-lucide="download" class="w-3 h-3"></i>
-                  <span>Save Cover</span>
+              <h4 class="font-bold text-sm text-white line-clamp-2" title="${item.title}">${item.title}</h4>
+              <div class="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                <button onclick='downloadSingleCover("${item.high_res_url || item.image_url}", "${item.title.replace(/"/g, '&quot;')}")' class="flex-1 py-1.5 px-2 rounded-lg bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs font-semibold flex items-center justify-center space-x-1">
+                  <i data-lucide="download" class="w-3 h-3"></i><span>Save Cover</span>
                 </button>
-
-                <button 
-                  onclick='copyUrl("${item.high_res_url || item.image_url}")'
-                  title="Copy Direct Image URL"
-                  class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition">
-                  <i data-lucide="link" class="w-3.5 h-3.5"></i>
-                </button>
-
-                <a 
-                  href="${item.high_res_url || item.image_url}" 
-                  target="_blank"
-                  title="Open direct image in new tab" 
-                  class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition">
+                <a href="${item.high_res_url || item.image_url}" target="_blank" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
                   <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                 </a>
               </div>
@@ -684,36 +634,204 @@
           </div>
         `;
       }).join('');
+      lucide.createIcons();
+    }
 
+    // ==========================================
+    // RAPIDGATOR BULK SCRAPER HANDLERS
+    // ==========================================
+    async function handleRgBulkScrape(e) {
+      e.preventDefault();
+      const rawText = document.getElementById('rgUrlsInput').value.trim();
+      const urls = rawText.split('\n').map(s => s.trim()).filter(Boolean);
+      if (urls.length === 0) {
+        showToast('Please enter at least one URL');
+        return;
+      }
+
+      setLoading(true, `Extracting Rapidgator links from ${urls.length} URLs in parallel...`);
+      try {
+        const resp = await fetch('/api/bulk-rapidgator', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ urls: urls })
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        currentRgData = data;
+        renderRapidgatorResults(data);
+        showToast(`Processed ${data.total_items} URLs! Found ${data.found_links_count} Rapidgator links.`);
+      } catch (err) {
+        alert("Extraction Error: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function handleRgHtmlScrape(e) {
+      e.preventDefault();
+      const rawHtml = document.getElementById('rgRawHtmlInput').value.trim();
+      const baseUrl = document.getElementById('rgBaseUrl').value.trim();
+      if (!rawHtml) return;
+
+      setLoading(true, "Parsing Rapidgator links from HTML...");
+      try {
+        const resp = await fetch('/api/bulk-rapidgator', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ raw_html: rawHtml, base_url: baseUrl })
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        currentRgData = data;
+        renderRapidgatorResults(data);
+        showToast(`Extracted ${data.total_items} items from HTML!`);
+      } catch (err) {
+        alert("Extraction Error: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function renderRapidgatorResults(data) {
+      document.getElementById('rgResultsSection').classList.remove('hidden');
+      document.getElementById('rgStatsBadge').innerText = `${data.total_items} items · ${data.found_links_count} Rapidgator links`;
+
+      const tbody = document.getElementById('rgTableBody');
+      if (!data.items || data.items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400">No items found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.items.map((item, idx) => {
+        const hasRg = Boolean(item.rapidgator_url);
+        const statusBadge = hasRg 
+          ? `<span class="px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800 text-[10px]">Found</span>`
+          : (item.status === 'cloudflare_blocked' 
+              ? `<span class="px-2 py-0.5 rounded-full bg-amber-950/80 text-amber-400 border border-amber-800 text-[10px]" title="Use Paste HTML tab">Cloudflare</span>`
+              : `<span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px]">No Link</span>`);
+
+        const rgLinkCell = hasRg
+          ? `<div class="flex items-center space-x-1.5 max-w-md truncate">
+               <a href="${item.rapidgator_url}" target="_blank" class="text-indigo-400 hover:text-indigo-300 hover:underline truncate" title="${item.rapidgator_url}">
+                 ${item.rapidgator_url}
+               </a>
+             </div>`
+          : `<span class="text-slate-500 italic">Rapidgator link not found in post</span>`;
+
+        return `
+          <tr class="hover:bg-slate-900/60 transition">
+            <td class="py-3 px-4 text-center text-slate-500 font-bold">${idx + 1}</td>
+            <td class="py-3 px-4 font-bold text-white max-w-xs truncate" title="${item.title}">${item.title}</td>
+            <td class="py-3 px-4">${rgLinkCell}</td>
+            <td class="py-3 px-3 text-center text-slate-400">${item.file_size || '-'}</td>
+            <td class="py-3 px-3 text-center">${statusBadge}</td>
+            <td class="py-3 px-3 text-center">
+              ${hasRg ? `
+                <button onclick="copySingleUrl('${item.rapidgator_url}')" title="Copy Rapidgator Link" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                </button>
+              ` : '-'}
+            </td>
+          </tr>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // ==========================================
+    // EXPORTS & HELPERS
+    // ==========================================
+    function downloadRapidgatorCsv() {
+      if (!currentRgData || !currentRgData.items || currentRgData.items.length === 0) {
+        showToast('No data to export.');
+        return;
+      }
+
+      const rows = [
+        ["Judul Majalah", "Link Rapidgator", "Ukuran File", "Status", "Source URL"]
+      ];
+
+      currentRgData.items.forEach(item => {
+        rows.push([
+          `"${String(item.title || '').replace(/"/g, '""')}"`,
+          `"${String(item.rapidgator_url || '').replace(/"/g, '""')}"`,
+          `"${String(item.file_size || '').replace(/"/g, '""')}"`,
+          `"${String(item.status || '').replace(/"/g, '""')}"`,
+          `"${String(item.source_url || '').replace(/"/g, '""')}"`
+        ]);
+      });
+
+      const csvContent = rows.map(r => r.join(",")).join("\r\n");
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `rapidgator_majalah_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      showToast('CSV Judul & Link Rapidgator downloaded successfully!');
+    }
+
+    function copyAllRapidgatorLinks() {
+      if (!currentRgData || !currentRgData.items) return;
+      const links = currentRgData.items
+        .map(i => i.rapidgator_url)
+        .filter(Boolean);
+
+      if (links.length === 0) {
+        showToast('No Rapidgator links found to copy.');
+        return;
+      }
+
+      navigator.clipboard.writeText(links.join('\n'));
+      showToast(`Copied ${links.length} Rapidgator links to clipboard!`);
+    }
+
+    function downloadRapidgatorJson() {
+      if (!currentRgData) return;
+      const jsonStr = JSON.stringify(currentRgData, null, 2);
+      const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rapidgator_data_${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast('JSON exported!');
+    }
+
+    function copySingleUrl(url) {
+      navigator.clipboard.writeText(url);
+      showToast('Link copied to clipboard!');
+    }
+
+    function setLoading(isLoading, text) {
+      const loader = document.getElementById('globalLoading');
+      if (isLoading) {
+        loader.classList.remove('hidden');
+        document.getElementById('loadingStatusText').innerText = text || 'Processing...';
+      } else {
+        loader.classList.add('hidden');
+      }
       lucide.createIcons();
     }
 
     function openLightbox(item) {
       const modal = document.getElementById('lightboxModal');
-      const img = document.getElementById('lightboxImg');
-      const title = document.getElementById('lightboxTitle');
-      const meta = document.getElementById('lightboxMeta');
-      const link = document.getElementById('lightboxDirectLink');
-      const dlBtn = document.getElementById('lightboxDownloadBtn');
-
-      const url = item.high_res_url || item.image_url;
-      img.src = `/api/proxy-image?url=${encodeURIComponent(url)}`;
-      title.innerText = item.title;
-      meta.innerText = `${item.resolution ? item.resolution + ' · ' : ''}${item.file_size_formatted ? item.file_size_formatted + ' · ' : ''}${item.format || 'IMAGE'}`;
-      link.href = url;
-      dlBtn.onclick = () => downloadSingleCover(url, item.title);
-
+      document.getElementById('lightboxImg').src = `/api/proxy-image?url=${encodeURIComponent(item.high_res_url || item.image_url)}`;
+      document.getElementById('lightboxTitle').innerText = item.title;
       modal.classList.remove('hidden');
       lucide.createIcons();
     }
 
     function closeLightbox() {
       document.getElementById('lightboxModal').classList.add('hidden');
-    }
-
-    function copyUrl(url) {
-      navigator.clipboard.writeText(url);
-      showToast('Image URL copied to clipboard!');
     }
 
     function downloadSingleCover(url, title) {
@@ -728,27 +846,21 @@
     }
 
     async function downloadAllZip() {
-      if (!currentScrapeData || !currentScrapeData.items || currentScrapeData.items.length === 0) {
+      if (!currentCoverData || !currentCoverData.items || currentCoverData.items.length === 0) {
         showToast('No covers found to download.');
         return;
       }
-      const validItems = currentScrapeData.items
+      const validItems = currentCoverData.items
         .filter(i => (i.high_res_url || i.image_url))
         .map(i => ({
           url: String(i.high_res_url || i.image_url),
           title: String(i.title || 'Magazine Cover')
         }));
 
-      if (validItems.length === 0) {
-        showToast('No valid image URLs available.');
-        return;
-      }
-
       const btn = document.getElementById('btnZip');
       const origText = btn.innerHTML;
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Packaging ${validItems.length} Covers...</span>`;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Packaging...</span>`;
       btn.disabled = true;
-      lucide.createIcons();
 
       try {
         const resp = await fetch('/api/download/zip', {
@@ -756,17 +868,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ items: validItems })
         });
-
-        if (!resp.ok) {
-          const errText = await resp.text().catch(() => '');
-          throw new Error(`Server returned HTTP ${resp.status}: ${errText}`);
-        }
-
         const blob = await resp.blob();
-        if (blob.size < 100) {
-          throw new Error('Downloaded ZIP is empty or corrupted');
-        }
-
         const dlUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = dlUrl;
@@ -775,10 +877,9 @@
         a.click();
         document.body.removeChild(a);
         setTimeout(() => window.URL.revokeObjectURL(dlUrl), 2000);
-
-        showToast(`ZIP package (${Math.round(blob.size / 1024)} KB) downloaded!`);
+        showToast('ZIP downloaded successfully!');
       } catch (err) {
-        alert('ZIP Download Error: ' + err.message);
+        alert("ZIP error: " + err.message);
       } finally {
         btn.innerHTML = origText;
         btn.disabled = false;
@@ -786,33 +887,12 @@
       }
     }
 
-    function exportJson() {
-      if (!currentScrapeData || !currentScrapeData.items || currentScrapeData.items.length === 0) {
-        showToast('No scraped items to export.');
-        return;
-      }
-      const jsonStr = JSON.stringify(currentScrapeData, null, 2);
-      const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `magazine_scraped_${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      showToast('JSON exported successfully!');
-    }
-
     function exportCsv() {
-      if (!currentScrapeData || !currentScrapeData.items || currentScrapeData.items.length === 0) {
-        showToast('No scraped items to export.');
-        return;
-      }
-      const headers = ["ID", "Magazine Name", "Issue / Date", "Resolution", "Width", "Height", "File Size", "High Res Image URL", "Original Image URL"];
-      const rows = [headers];
-
-      currentScrapeData.items.forEach((i, idx) => {
+      if (!currentCoverData || !currentCoverData.items) return;
+      const rows = [
+        ["ID", "Magazine Name", "Issue / Date", "Resolution", "Width", "Height", "File Size", "High Res Image URL", "Original Image URL"]
+      ];
+      currentCoverData.items.forEach((i, idx) => {
         rows.push([
           i.id || (idx + 1),
           `"${String(i.title || '').replace(/"/g, '""')}"`,
@@ -825,19 +905,17 @@
           `"${String(i.image_url || '')}"`
         ]);
       });
-
-      const csvString = rows.map(r => r.join(",")).join("\r\n");
-      // \uFEFF Byte Order Mark ensures Excel & Google Sheets open with proper UTF-8 column formatting
-      const blob = new Blob(["\uFEFF" + csvString], { type: "text/csv;charset=utf-8;" });
+      const csvContent = rows.map(r => r.join(",")).join("\r\n");
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `magazine_covers_${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      showToast('CSV exported successfully!');
+      showToast('CSV exported!');
     }
   </script>
 </body>
