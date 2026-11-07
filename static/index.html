@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoupCover · High-Res Magazine Cover Scraper</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fdf4ff',
+              100: '#fae8ff',
+              500: '#d946ef',
+              600: '#c026d3',
+              700: '#a21caf',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    code, pre, .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .glass-card {
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.1);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-fuchsia-500/30 selection:text-fuchsia-300">
+
+  <!-- Top Navigation Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-fuchsia-600/20">
+          <i data-lucide="book-open" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="font-extrabold text-lg text-white tracking-tight">Soup<span class="text-fuchsia-400">Cover</span></h1>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-fuchsia-950/80 text-fuchsia-400 border border-fuchsia-800/60 font-semibold">BS4 + Requests</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">High-Resolution Magazine Cover & Title Scraper</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <a href="https://github.com/rnrizki" target="_blank" class="flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+          <i data-lucide="github" class="w-4 h-4"></i>
+          <span>rnrizki</span>
+        </a>
+        <div class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-950/50 text-emerald-400 border border-emerald-800/50 text-xs font-mono">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>soup.lmrei.id</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    
+    <!-- Hero / Input Card -->
+    <div class="glass-card rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+      <!-- Glow decoration -->
+      <div class="absolute -top-24 -right-24 w-72 h-72 bg-fuchsia-600/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="max-w-3xl mx-auto text-center space-y-3 mb-6">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          Scrape Magazine Covers in <span class="bg-gradient-to-r from-fuchsia-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">Ultra High-Res</span>
+        </h2>
+        <p class="text-sm text-slate-400">
+          Paste any website URL to automatically extract magazine titles, issue details, and full-resolution cover artwork.
+        </p>
+      </div>
+
+      <!-- Scrape Form -->
+      <form id="scrapeForm" onsubmit="handleScrape(event)" class="max-w-4xl mx-auto space-y-4">
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="relative flex-1">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
+              <i data-lucide="globe" class="w-5 h-5"></i>
+            </div>
+            <input 
+              type="text" 
+              id="targetUrl" 
+              placeholder="https://example.com/magazines/archive or single issue page..." 
+              required
+              class="w-full pl-12 pr-10 py-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent text-sm font-mono shadow-inner transition"
+            />
+            <button 
+              type="button" 
+              onclick="document.getElementById('targetUrl').value = ''; document.getElementById('targetUrl').focus();"
+              class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <button 
+            type="submit" 
+            id="scrapeBtn"
+            class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-semibold text-sm flex items-center justify-center space-x-2 shadow-lg shadow-fuchsia-600/25 transition active:scale-[0.98] disabled:opacity-50">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span>Scrape Covers</span>
+          </button>
+        </div>
+
+        <!-- Mode & Settings Toggle Bar -->
+        <div class="flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2 pt-2">
+          <div class="flex items-center space-x-3">
+            <label class="flex items-center space-x-2 cursor-pointer select-none">
+              <input type="checkbox" id="checkDims" checked class="w-4 h-4 rounded text-fuchsia-600 bg-slate-900 border-slate-700 focus:ring-fuchsia-500">
+              <span>Probe actual dimensions & file size</span>
+            </label>
+          </div>
+
+          <button 
+            type="button" 
+            onclick="toggleSettings()"
+            class="flex items-center space-x-1.5 text-slate-400 hover:text-fuchsia-400 transition font-medium">
+            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+            <span id="settingsToggleLabel">Advanced Selectors & Headers</span>
+          </button>
+        </div>
+
+        <!-- Advanced Settings Drawer -->
+        <div id="advancedSettings" class="hidden p-5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-4 transition-all">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Custom Item Container Selector (optional)</label>
+              <input type="text" id="selContainer" placeholder="e.g. .magazine-card, article, .issue" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 focus:ring-1 focus:ring-fuchsia-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Custom Title Selector (optional)</label>
+              <input type="text" id="selTitle" placeholder="e.g. h2.title, .magazine-name" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 focus:ring-1 focus:ring-fuchsia-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Custom Cover Image Selector (optional)</label>
+              <input type="text" id="selImage" placeholder="e.g. img.cover, .thumb img" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 focus:ring-1 focus:ring-fuchsia-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Custom Issue/Date Selector (optional)</label>
+              <input type="text" id="selIssue" placeholder="e.g. .issue-date, span.vol" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 focus:ring-1 focus:ring-fuchsia-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Custom Cookie (for sites requiring authentication / session)</label>
+            <input type="text" id="customCookies" placeholder="e.g. session_id=xyz; auth_token=abc" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-slate-200 focus:ring-1 focus:ring-fuchsia-500">
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="hidden text-center py-12 space-y-4">
+      <div class="inline-flex p-4 rounded-full bg-fuchsia-950/40 border border-fuchsia-800/50 animate-bounce">
+        <i data-lucide="loader-2" class="w-8 h-8 text-fuchsia-400 animate-spin"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-white">Scraping with Beautiful Soup & Requests...</h3>
+        <p id="loadingStatusText" class="text-xs text-slate-400 font-mono mt-1">Connecting to target website...</p>
+      </div>
+    </div>
+
+    <!-- Error Banner -->
+    <div id="errorBanner" class="hidden p-4 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 flex items-start space-x-3 text-sm">
+      <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0 text-rose-400 mt-0.5"></i>
+      <div class="flex-1">
+        <span class="font-bold">Error encountered:</span>
+        <span id="errorMessage" class="block font-mono text-xs mt-1 text-rose-200"></span>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsSection" class="hidden space-y-6">
+      
+      <!-- Summary & Actions Toolbar -->
+      <div class="glass-card rounded-2xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center space-x-4 w-full md:w-auto">
+          <div class="p-3 rounded-xl bg-fuchsia-950/80 border border-fuchsia-800/60 text-fuchsia-400">
+            <i data-lucide="layers" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h3 class="font-bold text-white text-base">Extracted Covers</h3>
+              <span id="itemCountBadge" class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono text-xs font-semibold">0 items</span>
+            </div>
+            <p id="sourceDomainText" class="text-xs text-slate-400 truncate max-w-md font-mono mt-0.5"></p>
+          </div>
+        </div>
+
+        <!-- Filter & Export Controls -->
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+          <div class="relative flex-1 sm:flex-initial">
+            <input 
+              type="text" 
+              id="filterSearch" 
+              placeholder="Filter by magazine name..." 
+              oninput="filterCards()" 
+              class="w-full sm:w-56 pl-8 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-fuchsia-500 font-mono"
+            />
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5"></i>
+          </div>
+
+          <select id="filterRes" onchange="filterCards()" class="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 font-mono focus:outline-none focus:ring-1 focus:ring-fuchsia-500">
+            <option value="all">All Resolutions</option>
+            <option value="highres">High Res Only (&gt;1000px)</option>
+            <option value="portrait">Portrait Covers Only</option>
+          </select>
+
+          <!-- Export buttons -->
+          <button 
+            type="button" 
+            onclick="downloadAllZip()" 
+            id="btnZip"
+            class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center space-x-1.5 shadow transition">
+            <i data-lucide="file-archive" class="w-3.5 h-3.5"></i>
+            <span>Download All ZIP</span>
+          </button>
+
+          <button 
+            type="button" 
+            onclick="exportJson()" 
+            class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs flex items-center space-x-1.5 transition">
+            <i data-lucide="file-json" class="w-3.5 h-3.5"></i>
+            <span>JSON</span>
+          </button>
+
+          <button 
+            type="button" 
+            onclick="exportCsv()" 
+            class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs flex items-center space-x-1.5 transition">
+            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+            <span>CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Covers Visual Gallery -->
+      <div id="coversGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Lightbox Modal -->
+  <div id="lightboxModal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+    <button onclick="closeLightbox()" class="absolute top-4 right-4 p-2 rounded-full bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700 transition">
+      <i data-lucide="x" class="w-6 h-6"></i>
+    </button>
+    <div class="max-w-4xl max-h-[90vh] flex flex-col items-center space-y-4">
+      <img id="lightboxImg" src="" alt="" class="max-h-[75vh] w-auto object-contain rounded-lg shadow-2xl border border-slate-800">
+      <div class="text-center space-y-1">
+        <h4 id="lightboxTitle" class="text-base font-bold text-white"></h4>
+        <div id="lightboxMeta" class="text-xs font-mono text-fuchsia-400"></div>
+        <div class="pt-2 flex items-center justify-center space-x-3">
+          <a id="lightboxDirectLink" href="#" target="_blank" class="text-xs text-sky-400 hover:underline flex items-center space-x-1">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            <span>Open Direct Image URL</span>
+          </a>
+          <button id="lightboxDownloadBtn" class="px-3 py-1 bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded text-xs font-medium flex items-center space-x-1">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Download</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl text-xs text-white font-medium flex items-center space-x-2">
+    <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toastMsg"></span>
+  </div>
+
+  <footer class="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
+    <p>Powered by <span class="text-fuchsia-400 font-semibold">FastAPI + Beautiful Soup 4 + Requests</span> · Hosted at <span class="text-slate-400 font-mono">soup.lmrei.id</span></p>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+    let currentScrapeData = null;
+
+    function toggleSettings() {
+      const el = document.getElementById('advancedSettings');
+      el.classList.toggle('hidden');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    async function handleScrape(e) {
+      e.preventDefault();
+      const url = document.getElementById('targetUrl').value.trim();
+      if (!url) return;
+
+      const checkDims = document.getElementById('checkDims').checked;
+      const selContainer = document.getElementById('selContainer').value.trim();
+      const selTitle = document.getElementById('selTitle').value.trim();
+      const selImage = document.getElementById('selImage').value.trim();
+      const selIssue = document.getElementById('selIssue').value.trim();
+      const customCookiesStr = document.getElementById('customCookies').value.trim();
+
+      const custom_selectors = selContainer ? {
+        item_container: selContainer,
+        title: selTitle,
+        image: selImage,
+        issue: selIssue
+      } : null;
+
+      let custom_cookies = null;
+      if (customCookiesStr) {
+        custom_cookies = {};
+        customCookiesStr.split(';').forEach(part => {
+          const [k, v] = part.split('=');
+          if (k && v) custom_cookies[k.trim()] = v.trim();
+        });
+      }
+
+      // Show loading
+      document.getElementById('loadingState').classList.remove('hidden');
+      document.getElementById('resultsSection').classList.add('hidden');
+      document.getElementById('errorBanner').classList.add('hidden');
+      document.getElementById('scrapeBtn').disabled = true;
+
+      try {
+        const resp = await fetch('/api/scrape', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: url,
+            custom_selectors: custom_selectors,
+            custom_cookies: custom_cookies,
+            check_dimensions: checkDims
+          })
+        });
+
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          throw new Error(errData.detail || `Server error: ${resp.status}`);
+        }
+
+        const data = await resp.json();
+        currentScrapeData = data;
+        renderResults(data);
+      } catch (err) {
+        document.getElementById('errorBanner').classList.remove('hidden');
+        document.getElementById('errorMessage').innerText = err.message;
+      } finally {
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('scrapeBtn').disabled = false;
+      }
+    }
+
+    function renderResults(data) {
+      document.getElementById('resultsSection').classList.remove('hidden');
+      document.getElementById('itemCountBadge').innerText = `${data.total_items} items found`;
+      document.getElementById('sourceDomainText').innerText = `${data.page_title ? data.page_title + ' · ' : ''}${data.source_url}`;
+
+      filterCards();
+    }
+
+    function filterCards() {
+      if (!currentScrapeData || !currentScrapeData.items) return;
+      const searchTerm = document.getElementById('filterSearch').value.toLowerCase();
+      const resFilter = document.getElementById('filterRes').value;
+
+      const filtered = currentScrapeData.items.filter(item => {
+        const matchesSearch = !searchTerm || 
+          (item.title && item.title.toLowerCase().includes(searchTerm)) ||
+          (item.issue && item.issue.toLowerCase().includes(searchTerm));
+
+        let matchesRes = true;
+        if (resFilter === 'highres') {
+          matchesRes = item.is_high_res || (item.width && item.width >= 1000) || (item.height && item.height >= 1400);
+        } else if (resFilter === 'portrait') {
+          matchesRes = item.is_portrait === true;
+        }
+
+        return matchesSearch && matchesRes;
+      });
+
+      renderGrid(filtered);
+    }
+
+    function renderGrid(items) {
+      const grid = document.getElementById('coversGrid');
+      if (items.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12 glass-card rounded-2xl">
+            <i data-lucide="image-off" class="w-10 h-10 mx-auto text-slate-500 mb-2"></i>
+            <p class="text-sm text-slate-400">No magazine covers matched the filter criteria.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      grid.innerHTML = items.map(item => {
+        const proxyImgUrl = `/api/proxy-image?url=${encodeURIComponent(item.high_res_url || item.image_url)}`;
+        const resText = item.resolution ? `${item.resolution}` : 'Cover Preview';
+        const isHd = item.is_high_res;
+        const resBadgeClass = isHd 
+          ? 'bg-emerald-950/80 text-emerald-400 border-emerald-700/80 font-bold'
+          : 'bg-slate-900/80 text-slate-300 border-slate-700';
+
+        const sizeBadge = item.file_size_formatted ? `<span class="px-2 py-0.5 rounded bg-slate-900/80 text-slate-400 border border-slate-800 text-[10px] font-mono">${item.file_size_formatted}</span>` : '';
+        const issueBadge = item.issue ? `<span class="px-2 py-0.5 rounded bg-fuchsia-950/80 text-fuchsia-400 border border-fuchsia-800/80 text-[10px] font-mono font-medium">${item.issue}</span>` : '';
+
+        return `
+          <div class="glass-card rounded-2xl overflow-hidden group hover:border-fuchsia-500/40 transition duration-300 flex flex-col shadow-lg">
+            <!-- Cover Image Container -->
+            <div class="relative bg-slate-900 aspect-[3/4] overflow-hidden flex items-center justify-center cursor-pointer" onclick='openLightbox(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+              <img 
+                src="${proxyImgUrl}" 
+                alt="${item.title}" 
+                loading="lazy"
+                onerror="this.onerror=null; this.src='${item.high_res_url || item.image_url}';"
+                class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60"></div>
+              
+              <!-- Badges on image -->
+              <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono border backdrop-blur ${resBadgeClass}">
+                  ${isHd ? '★ ' : ''}${resText}
+                </span>
+                ${sizeBadge}
+              </div>
+
+              <!-- Quick preview overlay -->
+              <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-200 bg-black/40 backdrop-blur-[2px]">
+                <span class="px-3 py-1.5 rounded-lg bg-slate-900/90 text-white text-xs font-medium flex items-center space-x-1.5 border border-slate-700 shadow-xl">
+                  <i data-lucide="zoom-in" class="w-3.5 h-3.5 text-fuchsia-400"></i>
+                  <span>Inspect Full-Res</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Metadata Info -->
+            <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+              <div>
+                <div class="flex items-center space-x-1.5 mb-1">
+                  ${issueBadge}
+                  ${item.format ? `<span class="text-[10px] font-mono text-slate-500 uppercase">${item.format}</span>` : ''}
+                </div>
+                <h4 class="font-bold text-sm text-white line-clamp-2 hover:text-fuchsia-300 transition" title="${item.title}">
+                  ${item.title}
+                </h4>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                <button 
+                  onclick='downloadSingleCover("${item.high_res_url || item.image_url}", "${item.title.replace(/"/g, '&quot;')}")'
+                  class="flex-1 py-1.5 px-2.5 rounded-lg bg-fuchsia-600/90 hover:bg-fuchsia-600 text-white text-xs font-semibold flex items-center justify-center space-x-1 transition shadow-sm">
+                  <i data-lucide="download" class="w-3 h-3"></i>
+                  <span>Save Cover</span>
+                </button>
+
+                <button 
+                  onclick='copyUrl("${item.high_res_url || item.image_url}")'
+                  title="Copy Direct Image URL"
+                  class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition">
+                  <i data-lucide="link" class="w-3.5 h-3.5"></i>
+                </button>
+
+                <a 
+                  href="${item.high_res_url || item.image_url}" 
+                  target="_blank"
+                  title="Open in new tab" 
+                  class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition">
+                  <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function openLightbox(item) {
+      const modal = document.getElementById('lightboxModal');
+      const img = document.getElementById('lightboxImg');
+      const title = document.getElementById('lightboxTitle');
+      const meta = document.getElementById('lightboxMeta');
+      const link = document.getElementById('lightboxDirectLink');
+      const dlBtn = document.getElementById('lightboxDownloadBtn');
+
+      const url = item.high_res_url || item.image_url;
+      img.src = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+      title.innerText = item.title;
+      meta.innerText = `${item.resolution ? item.resolution + ' · ' : ''}${item.file_size_formatted ? item.file_size_formatted + ' · ' : ''}${item.format || 'IMAGE'}`;
+      link.href = url;
+      dlBtn.onclick = () => downloadSingleCover(url, item.title);
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightboxModal').classList.add('hidden');
+    }
+
+    function copyUrl(url) {
+      navigator.clipboard.writeText(url);
+      showToast('Image URL copied to clipboard!');
+    }
+
+    function downloadSingleCover(url, title) {
+      const a = document.createElement('a');
+      a.href = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+      a.download = `${title.replace(/[^\w\s-]/g, '').trim() || 'magazine_cover'}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Download started!');
+    }
+
+    async function downloadAllZip() {
+      if (!currentScrapeData || !currentScrapeData.items || currentScrapeData.items.length === 0) return;
+      const btn = document.getElementById('btnZip');
+      const origText = btn.innerHTML;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Packaging ZIP...</span>`;
+      btn.disabled = true;
+      lucide.createIcons();
+
+      try {
+        const payload = {
+          items: currentScrapeData.items.map(i => ({
+            url: i.high_res_url || i.image_url,
+            title: i.title
+          }))
+        };
+
+        const resp = await fetch('/api/download/zip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!resp.ok) throw new Error('ZIP generation failed');
+
+        const blob = await resp.blob();
+        const dlUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = dlUrl;
+        a.download = `magazine_covers_${new Date().toISOString().slice(0, 10)}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(dlUrl);
+
+        showToast('ZIP archive downloaded successfully!');
+      } catch (err) {
+        alert('ZIP Download error: ' + err.message);
+      } finally {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+        lucide.createIcons();
+      }
+    }
+
+    function exportJson() {
+      if (!currentScrapeData) return;
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentScrapeData, null, 2));
+      const a = document.createElement('a');
+      a.href = dataStr;
+      a.download = `magazine_scraped_${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('JSON exported!');
+    }
+
+    function exportCsv() {
+      if (!currentScrapeData || !currentScrapeData.items) return;
+      const rows = [
+        ["ID", "Magazine Name", "Issue / Date", "Resolution", "Width", "Height", "File Size", "High Res Image URL", "Original Image URL"]
+      ];
+
+      currentScrapeData.items.forEach(i => {
+        rows.push([
+          i.id,
+          `"${(i.title || '').replace(/"/g, '""')}"`,
+          `"${(i.issue || '').replace(/"/g, '""')}"`,
+          i.resolution || '',
+          i.width || '',
+          i.height || '',
+          i.file_size_formatted || '',
+          `"${i.high_res_url || ''}"`,
+          `"${i.image_url || ''}"`
+        ]);
+      });
+
+      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const a = document.createElement('a');
+      a.href = encodedUri;
+      a.download = `magazine_covers_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('CSV exported!');
+    }
+  </script>
+</body>
+</html>
