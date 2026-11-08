@@ -85,6 +85,16 @@
         </div>
 
         <div class="flex items-center space-x-2">
+          <a 
+            href="/downloads/macro-browser-extension.zip" 
+            download="soupcover-macro-extension.zip" 
+            class="flex items-center space-x-1.5 text-xs text-indigo-300 hover:text-white px-3 py-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 transition font-medium shadow-sm"
+            title="Unduh Ekstensi Chrome/Edge untuk Auto-Copy & Ekstrak Otomatis (Ctrl+M lalu C / Alt+S)">
+            <i data-lucide="puzzle" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span class="hidden md:inline">Ekstensi Chrome</span>
+            <span class="md:hidden">Ekstensi</span>
+          </a>
+
           <button 
             type="button" 
             onclick="openScriptGuideModal()" 
@@ -1953,6 +1963,40 @@
     // Auto-detect on load
     window.addEventListener('DOMContentLoaded', () => {
       checkAndSyncActiveHtml();
+    });
+
+    // Auto-import handler from Extension or External Scripts
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'SOUP_AUTO_IMPORT') {
+        const { html, url, mode } = event.data;
+        const targetMode = mode || 'rapidgator';
+        setAppMode(targetMode);
+
+        if (targetMode === 'rapidgator') {
+          const ta = document.getElementById('rgRawHtmlInput');
+          const bu = document.getElementById('rgBaseUrl');
+          if (ta) {
+            ta.value = html;
+            ta.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+          if (bu && url) bu.value = url;
+          setTimeout(() => extractRapidgatorFromHtml(), 200);
+        } else if (targetMode === 'covers') {
+          const ta = document.getElementById('rawHtmlInput');
+          const bu = document.getElementById('baseUrlInput');
+          if (ta) {
+            ta.value = html;
+            ta.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+          if (bu && url) bu.value = url;
+          setTimeout(() => scrapeFromHtml(), 200);
+        } else if (targetMode === 'ai') {
+          const aiTa = document.getElementById('aiCustomHtmlInput');
+          if (aiTa) aiTa.value = html;
+          applyCustomHtml();
+        }
+        showToast('⚡ Halaman berhasil diimpor otomatis!');
+      }
     });
   </script>
 </body>

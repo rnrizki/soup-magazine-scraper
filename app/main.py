@@ -375,6 +375,9 @@ def bulk_rapidgator(req: BulkRapidgatorRequest):
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    downloads_dir = os.path.join(STATIC_DIR, "downloads")
+    if os.path.exists(downloads_dir):
+        app.mount("/downloads", StaticFiles(directory=downloads_dir), name="downloads")
 
 @app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 def index_page():

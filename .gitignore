@@ -6,6 +6,7 @@ __pycache__/
 env/
 venv/
 *.zip
+!static/downloads/*.zip
 *.csv
 *.json
 .DS_Store
