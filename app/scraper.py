@@ -1,3 +1,4 @@
+import os
 import re
 import io
 import time
@@ -33,10 +34,34 @@ DEFAULT_SOFTARCHIVE_COOKIES = {
     "anon_id": "2556f19a97dd4449",
     "PHPSESSID": "5a388a6e4348647619a063ecc5105022",
     "flarum_remember": "ESiq8Qit95xaGL7fc16mBk6lGy7Hg1lKoHK7yKrx",
-    "sa_remember": "40673e6bd28ccf6f.ff6175ebeda964b569e225997c3f92ebe57b5ee49216ca802b331a51ba8385f9",
-    "sid": "482285a80cd05b33.9cb476416ac70e5c8e8a43f166318ca073b47c6a971bac49dfc41c4987598d09",
-    "cf_clearance": "CvPZWYODTkM-tFvRwxWR_K6lpcIh20JQv17nqCf7jb_yUIDdV8tMRi6Hx5isS2-cTHml_gQSA913VfnhrxCopgVDaOpFVqZsNtpIDh-td12AcyfbxjumG3ogVl-EOh2NMeDYSizsFqyRNYfFnJclb2_oesMrzNFtLezf07S9aie5qCn2Gqws1y_9w-oOjz8rlJCSlNdKfbtHkmPdMSdV-Pk3bfGQ1wSD64-ILNDLYtGgQZsfWgRc130O9a-gQyKHJzrFK8LnMCdJxabBMAuwNAzg3QONkakEZ1oT7vrGPE79r8irs7n7nb5bD0hXH_BRrKD1EkFUZL3wL58Vo1SsJzHJH5rbDmE8kvb99uSVzmjC5V0yfsfz7HPfqrGfmaqlHIg"
+    "sa_remember": "40673e6bd28ccf6f.ae95e88dab7b279b5a187f9a32a9146e7e7238cb98707160883a20b6b33ef4ab",
+    "sid": "ffdaf7958c01ef0b.2c7e680f185ed9254270f1644268e893c5bfd727d0a7dbd1bda2bfeab61a9d0c",
+    "cf_clearance": "Cs5XYVZywYQm2s3pO66twM-vgWCZ9Dn6Rl4QKqeZyrAoNMMK8hf_Ys7DcukwssCNMtfqZtYOah-ojRglJpudsIiYgoDZVC1NF2C_y8neIuSbD_aF12o7ekGX5GqHmmFuZ52EMIVIhzMYO90FGYMpUyhNhlaqDNbtuw8FIHeZ5EceXrWckne4eNcK-77Hxd_GpyIuRHKUrgCHj1Ge93TiEgdoBFljprlekcPxNO0hhAFDoiwKOV1HeCmK1g7zhwNrpewy96spqAfmeJRWH_2LZe_C87z7Y4LZEsuIhzCQei9rlBEC3KvaIG7BOnfkwysqYNGb8YIR6_NRjHz0Lta9GOgwR31R9YWt_bcbwcDjmXIgY9Std4b25vGr9tf5MAVBK5Y"
 }
+
+COOKIE_STORE_PATHS = [
+    "/tmp/softarchive_session.json",
+    os.path.join(os.path.dirname(__file__), "softarchive_session.json"),
+]
+
+def get_active_softarchive_cookies() -> Dict[str, str]:
+    """
+    Get latest active cookies. Checks dynamic session storage files first,
+    falling back to DEFAULT_SOFTARCHIVE_COOKIES.
+    """
+    import json
+    for p in COOKIE_STORE_PATHS:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    stored = json.load(f)
+                    if isinstance(stored, dict) and stored.get("cf_clearance"):
+                        res = dict(DEFAULT_SOFTARCHIVE_COOKIES)
+                        res.update(stored)
+                        return res
+            except Exception:
+                pass
+    return dict(DEFAULT_SOFTARCHIVE_COOKIES)
 
 def extract_urls_from_text(text: str) -> List[str]:
     """
@@ -227,13 +252,14 @@ class MagazineScraper:
         req_cookies = dict(self.cookies)
         domain = urlparse(url).netloc.lower()
         if any(h in domain for h in ["softarchive", "sanet"]):
-            for k, v in DEFAULT_SOFTARCHIVE_COOKIES.items():
+            active_cookies = get_active_softarchive_cookies()
+            for k, v in active_cookies.items():
                 if k not in req_cookies:
                     req_cookies[k] = v
 
         # Try curl_cffi with chrome131 and chrome120 TLS impersonation first
         if HAS_CURL_CFFI:
-            for imp in ["chrome131", "chrome120"]:
+            for imp in ["chrome131", "chrome124", "chrome120"]:
                 try:
                     cffi_res = cffi_requests.get(
                         url,
@@ -243,7 +269,10 @@ class MagazineScraper:
                         timeout=15
                     )
                     if cffi_res.status_code == 200:
-                        return cffi_res.url, cffi_res.text
+                        # If not cloudflare challenge, return immediately
+                        if not is_cloudflare_challenge(cffi_res.text, ""):
+                            return cffi_res.url, cffi_res.text
+                        # If it is cloudflare challenge, keep trying or fallback
                 except Exception:
                     pass
 

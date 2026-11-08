@@ -16,7 +16,8 @@ from bs4 import BeautifulSoup
 from app.scraper import (
     MagazineScraper, clean_magazine_title, clean_text, DEFAULT_HEADERS,
     extract_single_magazine_rapidgator, extract_entries_from_html,
-    is_cloudflare_challenge, extract_urls_from_text, make_soup
+    is_cloudflare_challenge, extract_urls_from_text, make_soup,
+    get_active_softarchive_cookies, COOKIE_STORE_PATHS
 )
 from app.ai_chat import (
     ChatRequest, SelectorQueryRequest, run_ai_chat,
@@ -73,10 +74,60 @@ class BulkRapidgatorRequest(BaseModel):
     base_url: Optional[str] = "https://softarchive.download"
     custom_cookies: Optional[Dict[str, str]] = None
 
+class CookieSyncPayload(BaseModel):
+    cookies: Optional[Dict[str, str]] = None
+    cf_clearance: Optional[str] = None
+    sid: Optional[str] = None
+    sa_remember: Optional[str] = None
+    flarum_remember: Optional[str] = None
+    PHPSESSID: Optional[str] = None
+    anon_id: Optional[str] = None
+
 # Health check
 @app.api_route("/api/health", methods=["GET", "HEAD"])
 def health():
     return {"status": "ok", "app": "soup-magazine-scraper", "version": "1.0.0"}
+
+# Cookie sync endpoints (for automatic local chrome sync & extension)
+@app.post("/api/cookies/sync")
+def sync_cookies(payload: CookieSyncPayload):
+    data = payload.cookies or {}
+    for field in ["cf_clearance", "sid", "sa_remember", "flarum_remember", "PHPSESSID", "anon_id"]:
+        val = getattr(payload, field, None)
+        if val:
+            data[field] = val
+    if not data:
+        raise HTTPException(status_code=400, detail="No cookies provided")
+
+    target_path = COOKIE_STORE_PATHS[0]
+    existing = {}
+    if os.path.exists(target_path):
+        try:
+            with open(target_path, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+        except Exception:
+            pass
+    existing.update(data)
+    with open(target_path, "w", encoding="utf-8") as f:
+        import json
+        json.dump(existing, f, indent=2)
+
+    return {
+        "status": "success",
+        "synced_keys": list(existing.keys()),
+        "has_cf_clearance": bool(existing.get("cf_clearance"))
+    }
+
+@app.get("/api/cookies/status")
+def cookie_status():
+    active = get_active_softarchive_cookies()
+    cf = active.get("cf_clearance", "")
+    return {
+        "status": "ready" if cf else "empty",
+        "has_cf_clearance": bool(cf),
+        "cf_preview": (cf[:16] + "...") if cf else None,
+        "keys": list(active.keys())
+    }
 
 # ==========================================
 # AI CHAT ASSISTANT (BEAUTIFULSOUP + GEMINI)
