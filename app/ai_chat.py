@@ -239,7 +239,9 @@ def run_ai_chat(req: ChatRequest) -> Dict[str, Any]:
         "1. Berikan jawaban yang ramah, ringkas, jelas, dan sangat praktis dalam bahasa Indonesia (atau sesuai bahasa pengguna).",
         "2. Jika pengguna meminta mencari gambar atau link, gunakan data DOM BeautifulSoup yang telah diekstrak di bawah ini.",
         "3. Jika pengguna meminta kode Python, tuliskan kode BeautifulSoup4 yang bersih, idiomatis, dan siap dijalankan.",
-        "4. Tampilkan link atau hasil penting dalam format rapi (bullet list, tabel markdown, atau code block)."
+        "4. Tampilkan link atau hasil penting dalam format rapi (bullet list, tabel markdown, atau code block).",
+        "5. Bila membuatkan skrip scraping, sertakan penyimpanan hasil ke file CSV (default: 'majalah_links.csv') menggunakan modul bawaan 'csv' dan cetak pesan sukses: ✨ Berhasil! Data telah disimpan ke file: 'majalah_links.csv'.",
+        "6. Bila pengguna menanyakan cara menjalankan skrip, berikan panduan 3 langkah mudah: Langkah 1 (Simpan/Unduh scraper.py), Langkah 2 (Jalankan di Terminal: cd Downloads lalu python scraper.py atau python3 scraper.py), Langkah 3 (Buka file majalah_links.csv di Excel/Sheets/Notepad)."
     ]
 
     if dom_data:

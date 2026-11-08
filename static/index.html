@@ -84,10 +84,21 @@
           </button>
         </div>
 
-        <a href="https://github.com/rnrizki/soup-magazine-scraper" target="_blank" class="hidden sm:flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 transition">
-          <i data-lucide="github" class="w-4 h-4"></i>
-          <span>rnrizki</span>
-        </a>
+        <div class="flex items-center space-x-2">
+          <button 
+            type="button" 
+            onclick="openScriptGuideModal()" 
+            class="flex items-center space-x-1.5 text-xs text-amber-300 hover:text-white px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 transition font-medium shadow-sm">
+            <i data-lucide="terminal" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span class="hidden md:inline">Panduan Menjalankan Skrip</span>
+            <span class="md:hidden">Panduan Skrip</span>
+          </button>
+
+          <a href="https://github.com/rnrizki/soup-magazine-scraper" target="_blank" class="hidden sm:flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 transition">
+            <i data-lucide="github" class="w-4 h-4"></i>
+            <span>rnrizki</span>
+          </a>
+        </div>
       </div>
     </div>
   </header>
@@ -452,6 +463,13 @@
           <div class="flex items-center space-x-2 flex-shrink-0">
             <button 
               type="button" 
+              onclick="openScriptGuideModal()" 
+              class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-amber-500/10 border border-amber-500/30 hover:border-amber-500/60 text-amber-300 hover:text-white transition flex items-center space-x-1.5 shadow">
+              <i data-lucide="terminal" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Panduan Skrip</span>
+            </button>
+            <button 
+              type="button" 
               onclick="openApiKeyModal()" 
               class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-700 hover:border-amber-500/50 text-slate-200 hover:text-white transition flex items-center space-x-1.5 shadow">
               <i data-lucide="key" class="w-3.5 h-3.5 text-amber-400"></i>
@@ -520,6 +538,10 @@
         </button>
         <button type="button" onclick="sendQuickPrompt('Tuliskan script Python BeautifulSoup4 lengkap dan siap dijalankan untuk scraping halaman ini.')" class="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition text-xs flex items-center space-x-1 shadow-sm">
           <span>🐍 Generate Script Python BS4</span>
+        </button>
+        <button type="button" onclick="openScriptGuideModal()" class="px-3 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 hover:text-white transition text-xs flex items-center space-x-1 shadow-sm">
+          <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>🚀 Cara Menjalankan Skrip & CSV</span>
         </button>
       </div>
 
@@ -657,6 +679,161 @@
 
       <div class="flex justify-end pt-2 border-t border-slate-800">
         <button type="button" onclick="closeBs4Modal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script Guide Modal (Step-by-step Execution & CSV) -->
+  <div id="scriptGuideModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card rounded-2xl max-w-3xl w-full p-6 sm:p-7 space-y-5 border border-amber-500/30 shadow-2xl flex flex-col max-h-[90vh]">
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between border-b border-slate-800 pb-4">
+        <div class="space-y-1">
+          <div class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[11px] font-bold">
+            <i data-lucide="terminal" class="w-3 h-3 text-amber-400"></i>
+            <span>Panduan Langkah Demi Langkah</span>
+          </div>
+          <h3 class="font-extrabold text-white text-lg sm:text-xl flex items-center space-x-2">
+            <span>🚀 Cara Menjalankan Skrip Python & Menghasilkan CSV</span>
+          </h3>
+          <p class="text-xs text-slate-400">
+            Panduan mudah untuk menjalankan skrip web scraping BeautifulSoup di komputer Anda (Windows, Mac, atau Linux).
+          </p>
+        </div>
+        <button onclick="closeScriptGuideModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="flex-1 overflow-y-auto space-y-5 text-xs text-slate-300 pr-1">
+        <!-- Prasyarat: pip install -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-amber-400 text-xs flex items-center space-x-1.5">
+              <i data-lucide="box" class="w-4 h-4"></i>
+              <span>Prasyarat: Instalasi Library Python</span>
+            </span>
+            <span class="text-[10px] text-slate-500 font-mono">Cukup dijalankan sekali</span>
+          </div>
+          <p class="text-slate-400 text-[11px]">Pastikan komputer Anda memiliki Python dan library <code>requests</code> serta <code>beautifulsoup4</code>:</p>
+          <div class="flex items-center justify-between bg-slate-950 border border-slate-800 rounded-lg p-2.5 font-mono text-emerald-400 text-xs">
+            <code>pip install requests beautifulsoup4</code>
+            <button onclick="copySnippet('pip install requests beautifulsoup4')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-[11px] font-sans flex items-center space-x-1 transition">
+              <i data-lucide="copy" class="w-3 h-3"></i>
+              <span>Salin</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Langkah 1 -->
+        <div class="space-y-2">
+          <div class="flex items-center space-x-2 font-bold text-white text-sm">
+            <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-xs">1</span>
+            <h4>Langkah 1: Simpan / Unduh Kode</h4>
+          </div>
+          <div class="ml-8 space-y-1.5 text-slate-300">
+            <p>1. Buka aplikasi Text Editor (<strong>VS Code</strong>, <strong>Notepad</strong>, atau <strong>PyCharm</strong>).</p>
+            <p>2. Buat file baru dan copy-paste kode Python yang dihasilkan oleh SoupAI (atau klik tombol <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-mono text-[11px]"><i data-lucide="download" class="w-3 h-3 mr-1"></i>Unduh scraper.py</span> pada kotak kode di chat).</p>
+            <p>3. Simpan file tersebut dengan nama <code class="text-amber-300 font-mono font-semibold">scraper.py</code> di folder yang Anda inginkan (misalnya di folder <strong>Downloads</strong>).</p>
+          </div>
+        </div>
+
+        <!-- Langkah 2 -->
+        <div class="space-y-2 border-t border-slate-800/80 pt-4">
+          <div class="flex items-center space-x-2 font-bold text-white text-sm">
+            <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-xs">2</span>
+            <h4>Langkah 2: Jalankan di Terminal / Command Prompt</h4>
+          </div>
+          <div class="ml-8 space-y-3 text-slate-300">
+            <p>1. Buka <strong>Terminal</strong> (Mac/Linux) atau <strong>Command Prompt / PowerShell</strong> (Windows).</p>
+            <p>2. Masuk ke folder tempat file <code>scraper.py</code> disimpan (contoh jika disimpan di folder Downloads):</p>
+            <div class="flex items-center justify-between bg-slate-950 border border-slate-800 rounded-lg p-2.5 font-mono text-amber-300 text-xs">
+              <code>cd Downloads</code>
+              <button onclick="copySnippet('cd Downloads')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-[11px] font-sans flex items-center space-x-1 transition">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span>Salin</span>
+              </button>
+            </div>
+            <p>3. Jalankan skrip dengan perintah:</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div class="bg-slate-950 border border-slate-800 rounded-lg p-2.5 space-y-1">
+                <span class="text-[10px] text-slate-400 block font-sans font-semibold">Windows / Umum:</span>
+                <div class="flex items-center justify-between font-mono text-emerald-400">
+                  <code>python scraper.py</code>
+                  <button onclick="copySnippet('python scraper.py')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-[10px] font-sans flex items-center space-x-1">
+                    <i data-lucide="copy" class="w-3 h-3"></i>
+                    <span>Salin</span>
+                  </button>
+                </div>
+              </div>
+              <div class="bg-slate-950 border border-slate-800 rounded-lg p-2.5 space-y-1">
+                <span class="text-[10px] text-slate-400 block font-sans font-semibold">Mac / Linux:</span>
+                <div class="flex items-center justify-between font-mono text-indigo-400">
+                  <code>python3 scraper.py</code>
+                  <button onclick="copySnippet('python3 scraper.py')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-[10px] font-sans flex items-center space-x-1">
+                    <i data-lucide="copy" class="w-3 h-3"></i>
+                    <span>Salin</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Langkah 3 -->
+        <div class="space-y-2 border-t border-slate-800/80 pt-4">
+          <div class="flex items-center space-x-2 font-bold text-white text-sm">
+            <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-xs">3</span>
+            <h4>Langkah 3: Ambil Hasil File CSV</h4>
+          </div>
+          <div class="ml-8 space-y-2 text-slate-300">
+            <p>Setelah skrip selesai berjalan, terminal akan menampilkan pesan konfirmasi:</p>
+            <div class="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-800/50 text-emerald-300 font-mono text-xs">
+              ✨ Berhasil! Data telah disimpan ke file: 'majalah_links.csv'
+            </div>
+            <p>File <strong class="text-white font-mono">majalah_links.csv</strong> otomatis tersimpan di folder yang sama. Anda bisa langsung membukanya menggunakan:</p>
+            <div class="grid grid-cols-3 gap-2 text-center pt-1">
+              <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center space-y-1">
+                <span class="text-base">📊</span>
+                <span class="font-bold text-white text-[11px]">Microsoft Excel</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center space-y-1">
+                <span class="text-base">📑</span>
+                <span class="font-bold text-white text-[11px]">Google Sheets</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex flex-col items-center space-y-1">
+                <span class="text-base">📝</span>
+                <span class="font-bold text-white text-[11px]">Text Editor / Notepad</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bantuan Tambahan -->
+        <div class="rounded-xl p-4 bg-amber-500/5 border border-amber-500/20 space-y-2">
+          <div class="font-bold text-amber-300 flex items-center space-x-1.5 text-xs">
+            <i data-lucide="help-circle" class="w-4 h-4 text-amber-400"></i>
+            <span>💡 Butuh bantuan lain atau fitur khusus?</span>
+          </div>
+          <p class="text-slate-400 text-[11px]">
+            Di tab <strong>AI Chat (BS4 + Gemini)</strong>, Anda cukup kirimkan URL atau kode HTML majalah lain, lalu perintahkan AI jika ingin:
+          </p>
+          <ul class="list-disc list-inside space-y-1 text-slate-300 text-[11px] ml-1">
+            <li>🖼️ Mengunduh / mengekstrak gambar cover majalah resolusi tinggi.</li>
+            <li>📦 Scraping banyak link sekaligus (bulk scraping).</li>
+            <li>🔍 Mengekstrak link host lain seperti <strong>Katfile, Nitroflare, Turbobit, DDownload</strong>, dll. 🥣✨</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+        <button type="button" onclick="goToAiChatAndAskGuide()" class="text-xs text-amber-400 hover:text-amber-300 flex items-center space-x-1.5">
+          <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+          <span>Minta SoupAI Tuliskan Skrip Lengkap</span>
+        </button>
+        <button type="button" onclick="closeScriptGuideModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold">Tutup Panduan</button>
       </div>
     </div>
   </div>
@@ -1452,15 +1629,31 @@
 
       // Code blocks: ```lang ... ```
       out = out.replace(/```([a-zA-Z0-9_\-+]*)\n([\s\S]*?)```/g, function(match, lang, code) {
-        const cleanLang = (lang || 'code').trim();
+        const cleanLang = (lang || 'code').trim().toLowerCase();
         const escapedCode = escapeHtml(code.trim());
+        const isPython = cleanLang === 'python' || cleanLang === 'py';
+
+        const extraActions = isPython ? `
+          <button onclick="downloadPythonCode(this)" class="px-2 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 hover:text-white transition flex items-center space-x-1 border border-amber-500/30">
+            <i data-lucide="download" class="w-3 h-3"></i>
+            <span>Unduh scraper.py</span>
+          </button>
+          <button onclick="openScriptGuideModal()" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition flex items-center space-x-1">
+            <i data-lucide="terminal" class="w-3 h-3 text-amber-400"></i>
+            <span>Cara Jalankan</span>
+          </button>
+        ` : '';
+
         return `<div class="my-3 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden font-mono shadow-lg">
-          <div class="flex items-center justify-between px-3.5 py-1.5 bg-slate-900 border-b border-slate-800 text-[11px] text-slate-400">
-            <span class="font-bold uppercase tracking-wider text-amber-400">${cleanLang}</span>
-            <button onclick="copyCodeBlock(this)" class="px-2 py-0.5 rounded hover:bg-slate-800 hover:text-white transition flex items-center space-x-1">
-              <i data-lucide="copy" class="w-3 h-3"></i>
-              <span>Salin Kode</span>
-            </button>
+          <div class="flex items-center justify-between px-3.5 py-1.5 bg-slate-900 border-b border-slate-800 text-[11px] text-slate-400 flex-wrap gap-1.5">
+            <span class="font-bold uppercase tracking-wider text-amber-400">${cleanLang || 'code'}</span>
+            <div class="flex items-center space-x-1.5 flex-wrap gap-1">
+              ${extraActions}
+              <button onclick="copyCodeBlock(this)" class="px-2 py-0.5 rounded hover:bg-slate-800 hover:text-white transition flex items-center space-x-1">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span>Salin Kode</span>
+              </button>
+            </div>
           </div>
           <pre class="p-3.5 text-xs text-amber-200/90 overflow-x-auto leading-relaxed"><code>${escapedCode}</code></pre>
         </div>`;
@@ -1506,6 +1699,53 @@
           lucide.createIcons();
         }, 2000);
         showToast("Kode disalin ke clipboard!");
+      }
+    }
+
+    function downloadPythonCode(btn) {
+      const codeBlock = btn.closest('.my-3')?.querySelector('pre code');
+      if (codeBlock) {
+        const text = codeBlock.innerText;
+        const blob = new Blob([text], { type: "text/x-python;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "scraper.py";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast("File scraper.py berhasil diunduh ke folder Downloads!");
+      }
+    }
+
+    function openScriptGuideModal() {
+      const modal = document.getElementById('scriptGuideModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        lucide.createIcons();
+      }
+    }
+
+    function closeScriptGuideModal() {
+      const modal = document.getElementById('scriptGuideModal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function copySnippet(text) {
+      navigator.clipboard.writeText(text);
+      showToast("Perintah disalin ke clipboard!");
+    }
+
+    function goToAiChatAndAskGuide() {
+      closeScriptGuideModal();
+      setAppMode('ai');
+      const input = document.getElementById('aiUserInput');
+      if (input) {
+        input.value = "Tuliskan skrip Python BeautifulSoup4 lengkap yang mengekstrak semua judul dan link download dari halaman ini ke file CSV 'majalah_links.csv' beserta langkah menjalankannya.";
+        handleSendAiMessage();
       }
     }
 
