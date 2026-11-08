@@ -29,6 +29,37 @@ DEFAULT_HEADERS = {
 
 IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif', '.bmp')
 
+DEFAULT_SOFTARCHIVE_COOKIES = {
+    "anon_id": "2556f19a97dd4449",
+    "PHPSESSID": "5a388a6e4348647619a063ecc5105022",
+    "flarum_remember": "ESiq8Qit95xaGL7fc16mBk6lGy7Hg1lKoHK7yKrx",
+    "sa_remember": "40673e6bd28ccf6f.ff6175ebeda964b569e225997c3f92ebe57b5ee49216ca802b331a51ba8385f9",
+    "sid": "482285a80cd05b33.9cb476416ac70e5c8e8a43f166318ca073b47c6a971bac49dfc41c4987598d09",
+    "cf_clearance": "CvPZWYODTkM-tFvRwxWR_K6lpcIh20JQv17nqCf7jb_yUIDdV8tMRi6Hx5isS2-cTHml_gQSA913VfnhrxCopgVDaOpFVqZsNtpIDh-td12AcyfbxjumG3ogVl-EOh2NMeDYSizsFqyRNYfFnJclb2_oesMrzNFtLezf07S9aie5qCn2Gqws1y_9w-oOjz8rlJCSlNdKfbtHkmPdMSdV-Pk3bfGQ1wSD64-ILNDLYtGgQZsfWgRc130O9a-gQyKHJzrFK8LnMCdJxabBMAuwNAzg3QONkakEZ1oT7vrGPE79r8irs7n7nb5bD0hXH_BRrKD1EkFUZL3wL58Vo1SsJzHJH5rbDmE8kvb99uSVzmjC5V0yfsfz7HPfqrGfmaqlHIg"
+}
+
+def extract_urls_from_text(text: str) -> List[str]:
+    """
+    Extract all HTTP/HTTPS URLs from any text string.
+    Handles numbered lists (e.g. '1. https://...', '2.https://...'), markdown links, quotes, commas, etc.
+    """
+    if not text:
+        return []
+    matches = re.findall(r'https?://[^\s<>"\')]+', text)
+    cleaned = []
+    for m in matches:
+        clean_url = re.sub(r'[\.,;]+$', '', m).strip()
+        if clean_url and clean_url not in cleaned:
+            cleaned.append(clean_url)
+    return cleaned
+
+def make_soup(html: str) -> BeautifulSoup:
+    """Safely build BeautifulSoup tree with lxml or html.parser fallback."""
+    try:
+        return BeautifulSoup(html, "lxml")
+    except Exception:
+        return BeautifulSoup(html, "html.parser")
+
 def clean_text(text: Optional[str]) -> str:
     """Clean whitespace and common noise from scraped text."""
     if not text:
@@ -191,24 +222,33 @@ class MagazineScraper:
         """
         Fetch page content with browser impersonation.
         Uses curl_cffi when available to bypass Cloudflare TLS fingerprints.
+        Automatically applies SoftArchive clearance cookies when target domain matches.
         """
-        # Try curl_cffi with chrome120 TLS impersonation first
+        req_cookies = dict(self.cookies)
+        domain = urlparse(url).netloc.lower()
+        if any(h in domain for h in ["softarchive", "sanet"]):
+            for k, v in DEFAULT_SOFTARCHIVE_COOKIES.items():
+                if k not in req_cookies:
+                    req_cookies[k] = v
+
+        # Try curl_cffi with chrome131 and chrome120 TLS impersonation first
         if HAS_CURL_CFFI:
-            try:
-                cffi_res = cffi_requests.get(
-                    url,
-                    headers=self.headers,
-                    cookies=self.cookies,
-                    impersonate="chrome120",
-                    timeout=15
-                )
-                if cffi_res.status_code == 200:
-                    return cffi_res.url, cffi_res.text
-            except Exception:
-                pass
+            for imp in ["chrome131", "chrome120"]:
+                try:
+                    cffi_res = cffi_requests.get(
+                        url,
+                        headers=self.headers,
+                        cookies=req_cookies,
+                        impersonate=imp,
+                        timeout=15
+                    )
+                    if cffi_res.status_code == 200:
+                        return cffi_res.url, cffi_res.text
+                except Exception:
+                    pass
 
         # Fallback to standard requests session
-        res = self.session.get(url, timeout=15)
+        res = self.session.get(url, cookies=req_cookies, headers=self.headers, timeout=15)
         return res.url, res.text
 
     def extract_from_html(
@@ -222,7 +262,7 @@ class MagazineScraper:
         Extract magazine covers directly from raw HTML string.
         Enables pasting HTML from browser when Cloudflare blocks direct scraping.
         """
-        soup = BeautifulSoup(html, "lxml")
+        soup = make_soup(html)
         page_title = clean_text(soup.title.string if soup.title else "")
 
         # Check for Cloudflare challenge
@@ -617,7 +657,7 @@ def extract_page_file_size(text: str) -> Optional[str]:
 
 def extract_single_magazine_rapidgator(html: str, url: str) -> Dict[str, Any]:
     """Parse single magazine page for Title, Rapidgator link, and metadata."""
-    soup = BeautifulSoup(html, "lxml")
+    soup = make_soup(html)
     page_title = clean_text(soup.title.string if soup.title else "")
 
     # Extract title
@@ -656,7 +696,7 @@ def extract_entries_from_html(html: str, base_url: str) -> List[Dict[str, Any]]:
     Extract magazine entries from raw HTML (whether a single detail page or a multi-entry catalog page).
     If the page has multiple .cell / .story / .post elements, extract title and rapidgator links for each.
     """
-    soup = BeautifulSoup(html, "lxml")
+    soup = make_soup(html)
     containers = soup.select('div.cell, div.story, div.news, div.short_story, div.card, div.post, article')
     items = []
 

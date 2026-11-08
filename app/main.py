@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 from app.scraper import (
     MagazineScraper, clean_magazine_title, clean_text, DEFAULT_HEADERS,
     extract_single_magazine_rapidgator, extract_entries_from_html,
-    is_cloudflare_challenge
+    is_cloudflare_challenge, extract_urls_from_text, make_soup
 )
 from app.ai_chat import (
     ChatRequest, SelectorQueryRequest, run_ai_chat,
@@ -287,30 +287,47 @@ def download_zip(payload: ZipDownloadRequest):
 @app.post("/api/bulk-rapidgator")
 def bulk_rapidgator(req: BulkRapidgatorRequest):
     # Case 1: Raw HTML provided
-    if req.raw_html and len(req.raw_html.strip()) > 10:
-        base_url = (req.base_url or "https://softarchive.download").strip()
-        items = extract_entries_from_html(req.raw_html, base_url)
-        return {
-            "mode": "html",
-            "total_items": len(items),
-            "found_links_count": sum(1 for i in items if i.get("rapidgator_url")),
-            "items": items
-        }
+    if req.raw_html and len(req.raw_html.strip()) > 5:
+        # Smart Check: Did user paste plain URLs into the HTML box?
+        has_html_tags = bool(re.search(r'<\/?(?:html|body|div|span|a|p|h\d|table|tr|td|section|article|doctype|head|meta|link)[\s>]', req.raw_html, re.IGNORECASE))
+        urls_in_input = extract_urls_from_text(req.raw_html)
 
-    # Case 2: List of URLs provided
+        if not has_html_tags and urls_in_input:
+            # User pasted raw URLs into the HTML box! Automatically process as URL batch!
+            req.urls = urls_in_input
+            req.raw_html = None
+        else:
+            base_url = (req.base_url or "https://softarchive.download").strip()
+            items = extract_entries_from_html(req.raw_html, base_url)
+            return {
+                "mode": "html",
+                "total_items": len(items),
+                "found_links_count": sum(1 for i in items if i.get("rapidgator_url")),
+                "items": items
+            }
+
+    # Case 2: List of URLs provided (or auto-converted from raw_html)
     if not req.urls:
-        raise HTTPException(status_code=400, detail="Please provide URLs or paste raw HTML")
+        raise HTTPException(status_code=400, detail="Silakan masukkan URL majalah atau tempel kode HTML")
 
+    # Clean and extract all valid URLs from the input list (supports numbered lists 1. https://..., etc.)
     clean_urls = []
-    for u in req.urls:
-        u_str = u.strip()
-        if u_str:
-            if not u_str.startswith("http://") and not u_str.startswith("https://"):
-                u_str = "https://" + u_str
-            clean_urls.append(u_str)
+    for item in req.urls:
+        found = extract_urls_from_text(item)
+        if found:
+            for u in found:
+                if u not in clean_urls:
+                    clean_urls.append(u)
+        else:
+            u_str = item.strip()
+            if u_str:
+                if not u_str.startswith("http://") and not u_str.startswith("https://"):
+                    u_str = "https://" + u_str
+                if u_str not in clean_urls:
+                    clean_urls.append(u_str)
 
     if not clean_urls:
-        raise HTTPException(status_code=400, detail="No valid URLs provided")
+        raise HTTPException(status_code=400, detail="Tidak ditemukan URL yang valid")
 
     scraper = MagazineScraper(custom_cookies=req.custom_cookies)
     results = []
@@ -318,7 +335,7 @@ def bulk_rapidgator(req: BulkRapidgatorRequest):
     def process_url(idx: int, target_url: str) -> Dict[str, Any]:
         try:
             final_url, html = scraper.fetch_html(target_url)
-            soup = BeautifulSoup(html, "lxml")
+            soup = make_soup(html)
             page_title = clean_text(soup.title.string if soup.title else "")
             
             if is_cloudflare_challenge(html, page_title):
@@ -328,6 +345,7 @@ def bulk_rapidgator(req: BulkRapidgatorRequest):
                     "rapidgator_url": "",
                     "rapidgator_links": [],
                     "nitroflare_links": [],
+                    "ddownload_links": [],
                     "file_size": "",
                     "source_url": target_url,
                     "status": "cloudflare_blocked",
@@ -344,6 +362,7 @@ def bulk_rapidgator(req: BulkRapidgatorRequest):
                 "rapidgator_url": "",
                 "rapidgator_links": [],
                 "nitroflare_links": [],
+                "ddownload_links": [],
                 "file_size": "",
                 "source_url": target_url,
                 "status": "error",
