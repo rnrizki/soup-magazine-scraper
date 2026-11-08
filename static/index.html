@@ -74,6 +74,14 @@
             <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i>
             <span>Bulk Rapidgator & CSV</span>
           </button>
+          <button 
+            type="button" 
+            onclick="setAppMode('ai')" 
+            id="navBtnAi"
+            class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>AI Chat (BS4 + Gemini)</span>
+          </button>
         </div>
 
         <a href="https://github.com/rnrizki/soup-magazine-scraper" target="_blank" class="hidden sm:flex items-center space-x-1.5 text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 transition">
@@ -418,6 +426,159 @@
       </div>
     </div>
 
+    <!-- ======================================================== -->
+    <!-- MODE 3: AI CHAT ASSISTANT (BEAUTIFULSOUP + GEMINI)       -->
+    <!-- ======================================================== -->
+    <div id="sectionAi" class="hidden space-y-6">
+      <!-- AI Header Card -->
+      <div class="glass-card rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden border border-amber-500/20">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+              <span class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs font-bold">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Gemini 3.5 Flash + Beautiful Soup Engine</span>
+              </span>
+              <span class="text-xs text-slate-500 font-mono">v1.2 AI</span>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              SoupAI · Asisten Scraping & DOM Inspector
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-400 max-w-2xl">
+              Chat interaktif dengan AI yang langsung terhubung ke parser <strong>BeautifulSoup</strong>. Analisis struktur HTML, ekstrak link unduhan, temukan cover majalah, dan buatkan script Python instan.
+            </p>
+          </div>
+
+          <div class="flex items-center space-x-2 flex-shrink-0">
+            <button 
+              type="button" 
+              onclick="openApiKeyModal()" 
+              class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-700 hover:border-amber-500/50 text-slate-200 hover:text-white transition flex items-center space-x-1.5 shadow">
+              <i data-lucide="key" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span id="apiKeyBtnText">Pengaturan API Key</span>
+            </button>
+            <button 
+              type="button" 
+              onclick="clearChatHistory()" 
+              class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 transition flex items-center space-x-1">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              <span>Bersihkan</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Attached HTML Context Selector Bar -->
+        <div class="mt-5 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex items-center space-x-2">
+            <span class="text-slate-400 font-medium">Konteks HTML untuk AI:</span>
+            <div class="inline-flex p-1 rounded-xl bg-slate-900 border border-slate-800">
+              <button type="button" id="ctxSourceCovers" onclick="syncAiContext('covers')" class="px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">Tab Cover Scraper</button>
+              <button type="button" id="ctxSourceRg" onclick="syncAiContext('rapidgator')" class="px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">Tab Rapidgator</button>
+              <button type="button" id="ctxSourceCustom" onclick="syncAiContext('custom')" class="px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">Tempel Manual</button>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <div id="attachedHtmlBadge" class="flex items-center space-x-2 font-mono text-[11px] text-slate-400 bg-slate-900/90 px-3 py-1.5 rounded-lg border border-slate-800">
+              <span class="w-2 h-2 rounded-full bg-slate-600" id="attachedHtmlDot"></span>
+              <span id="attachedHtmlText">Belum ada HTML terlampir</span>
+            </div>
+            <button type="button" id="btnInspectBs4" onclick="inspectAttachedHtml()" class="hidden px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 text-xs font-semibold transition flex items-center space-x-1">
+              <i data-lucide="search" class="w-3 h-3"></i>
+              <span>Inspeksi BS4</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Custom HTML Drawer -->
+        <div id="customHtmlDrawer" class="hidden mt-4 pt-4 border-t border-slate-800/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-300">Tempel Kode HTML Mentah (Ctrl+V setelah Ctrl+U):</label>
+            <span class="text-[11px] text-slate-500 font-mono" id="customHtmlCharCount">0 karakter</span>
+          </div>
+          <textarea id="aiCustomHtmlInput" rows="4" placeholder="<!DOCTYPE html><html>... Paste raw source code here..." oninput="updateCustomHtmlCount()" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50"></textarea>
+          <div class="flex justify-end space-x-2">
+            <button type="button" onclick="cancelCustomHtml()" class="px-3 py-1.5 text-xs text-slate-400 hover:text-white">Batal</button>
+            <button type="button" onclick="applyCustomHtml()" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-semibold shadow">Terapkan ke AI</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Prompt Suggestions Chips -->
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <span class="text-slate-500 font-semibold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+          <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> Prompt Cepat:
+        </span>
+        <button type="button" onclick="sendQuickPrompt('Ekstrak dan daftar semua link download (Rapidgator, Katfile, dll.) beserta judul file dari HTML terlampir ini.')" class="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition text-xs flex items-center space-x-1 shadow-sm">
+          <span>📥 Ekstrak Semua Link Download</span>
+        </button>
+        <button type="button" onclick="sendQuickPrompt('Cari semua gambar cover majalah beresolusi tinggi di HTML ini dan buatkan daftar link gambarnya.')" class="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition text-xs flex items-center space-x-1 shadow-sm">
+          <span>🖼️ Cari Cover Resolusi Tinggi</span>
+        </button>
+        <button type="button" onclick="sendQuickPrompt('Analisis struktur DOM BeautifulSoup dari HTML ini. Apa selector CSS paling stabil untuk mengambil judul, edisi, dan cover?')" class="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition text-xs flex items-center space-x-1 shadow-sm">
+          <span>🔍 Rekomendasi CSS Selectors</span>
+        </button>
+        <button type="button" onclick="sendQuickPrompt('Tuliskan script Python BeautifulSoup4 lengkap dan siap dijalankan untuk scraping halaman ini.')" class="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition text-xs flex items-center space-x-1 shadow-sm">
+          <span>🐍 Generate Script Python BS4</span>
+        </button>
+      </div>
+
+      <!-- Chat Container -->
+      <div class="glass-card rounded-2xl shadow-2xl flex flex-col h-[600px] border border-slate-800/80 overflow-hidden">
+        <!-- Messages Scrollable Body -->
+        <div id="aiChatMessages" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 font-sans text-sm">
+          <!-- Initial Welcome Message from SoupAI -->
+          <div class="flex items-start space-x-3">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-amber-500/20 text-white font-bold text-xs">
+              AI
+            </div>
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl rounded-tl-sm p-4 max-w-2xl text-slate-200 space-y-2 shadow-sm leading-relaxed">
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-white text-xs">SoupAI Assistant</span>
+                <span class="text-[10px] text-amber-400 font-mono bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-800/50">BeautifulSoup + Gemini 3.5 Flash</span>
+              </div>
+              <p>Halo! Saya adalah asisten AI yang terintegrasi langsung dengan mesin <strong>BeautifulSoup</strong> di SoupCover.</p>
+              <p class="text-xs text-slate-400">Saya siap membantu Anda memproses dan mengekstrak data dari halaman web:</p>
+              <ul class="text-xs text-slate-300 list-disc list-inside space-y-1">
+                <li>Mengekstrak seluruh link download (Rapidgator, Katfile, Nitroflare, dll.).</li>
+                <li>Menemukan cover majalah resolusi tinggi dan menganalisis tag <code class="text-amber-300">&lt;img&gt;</code>.</li>
+                <li>Membuatkan script Python <code class="text-amber-300">BeautifulSoup4</code> otomatis untuk scraping berkala.</li>
+                <li>Menjelaskan hierarki elemen DOM dan menemukan selector CSS yang akurat.</li>
+              </ul>
+              <p class="text-xs text-slate-400 italic pt-1">Silakan lampirkan HTML (dari Tab Scraper atau tempel manual), lalu ketik pertanyaan Anda di bawah!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Footer -->
+        <div class="p-3 sm:p-4 bg-slate-900/90 border-t border-slate-800 flex flex-col gap-2">
+          <form onsubmit="handleSendAiMessage(event)" class="flex items-end gap-2">
+            <div class="flex-1 relative">
+              <textarea 
+                id="aiUserInput" 
+                rows="1" 
+                placeholder="Tanyakan sesuatu atau perintahkan AI mengekstrak data dari HTML..." 
+                onkeydown="handleAiTextareaKeydown(event)"
+                class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/60 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 resize-none max-h-36 min-h-[44px] focus:outline-none transition leading-normal font-sans"></textarea>
+            </div>
+
+            <button 
+              type="submit" 
+              id="aiSendBtn"
+              class="h-[44px] px-5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-semibold text-xs transition flex items-center justify-center space-x-1.5 shadow-lg shadow-amber-600/25 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
+              <span id="aiSendBtnText">Kirim</span>
+              <i data-lucide="send" class="w-4 h-4"></i>
+            </button>
+          </form>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-500 px-1">
+            <span>Tekan <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono text-[10px]">Enter</kbd> untuk kirim, <kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono text-[10px]">Shift + Enter</kbd> baris baru.</span>
+            <span id="aiTokenStatus" class="font-mono text-slate-500">Gemini 3.5 Flash Active</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Global Loading Indicator -->
     <div id="globalLoading" class="hidden text-center py-12 space-y-4">
       <div class="inline-flex p-4 rounded-full bg-indigo-950/40 border border-indigo-800/50 animate-bounce">
@@ -444,6 +605,62 @@
     </div>
   </div>
 
+  <!-- API Key Modal -->
+  <div id="apiKeyModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card rounded-2xl max-w-lg w-full p-6 space-y-4 border border-amber-500/30 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="key" class="w-5 h-5 text-amber-400"></i>
+          <h3 class="font-bold text-white text-base">Pengaturan Google Gemini API Key</h3>
+        </div>
+        <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-300">
+        <p>API Key digunakan untuk fitur <strong>AI Chat (BeautifulSoup + Gemini)</strong>. Kunci tersimpan di browser Anda secara lokal.</p>
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Gemini API Key:</label>
+          <input type="password" id="customApiKeyInput" placeholder="AQ.Ab8RN6... atau AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-100 focus:outline-none focus:border-amber-500">
+        </div>
+        <div id="apiKeyTestStatus" class="hidden p-3 rounded-xl bg-slate-900 border text-xs"></div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2">
+        <button type="button" onclick="testCustomApiKey()" id="btnTestKey" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white transition flex items-center space-x-1">
+          <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>Tes Validitas</span>
+        </button>
+        <div class="flex space-x-2">
+          <button type="button" onclick="closeApiKeyModal()" class="px-4 py-2 text-xs text-slate-400 hover:text-white">Batal</button>
+          <button type="button" onclick="saveCustomApiKey()" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold shadow">Simpan Kunci</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BS4 Inspect Modal -->
+  <div id="bs4InspectModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card rounded-2xl max-w-3xl w-full p-6 space-y-4 border border-slate-800 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="binary" class="w-5 h-5 text-amber-400"></i>
+          <h3 class="font-bold text-white text-base">Hasil Parsing BeautifulSoup (DOM Summary)</h3>
+        </div>
+        <button onclick="closeBs4Modal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto space-y-4 text-xs font-mono">
+        <div id="bs4InspectContent" class="space-y-4 text-slate-300">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2 border-t border-slate-800">
+        <button type="button" onclick="closeBs4Modal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold">Tutup</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl text-xs text-white font-medium flex items-center space-x-2">
     <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
@@ -459,23 +676,33 @@
     let currentCoverData = null;
     let currentRgData = null;
 
-    // App Mode Switcher (Covers vs Rapidgator)
+    // App Mode Switcher (Covers vs Rapidgator vs AI Chat)
     function setAppMode(mode) {
       const secCovers = document.getElementById('sectionCovers');
       const secRg = document.getElementById('sectionRapidgator');
+      const secAi = document.getElementById('sectionAi');
       const btnCovers = document.getElementById('navBtnCovers');
       const btnRg = document.getElementById('navBtnRg');
+      const btnAi = document.getElementById('navBtnAi');
+
+      secCovers.classList.add('hidden');
+      secRg.classList.add('hidden');
+      secAi.classList.add('hidden');
+
+      btnCovers.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+      btnRg.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+      btnAi.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
 
       if (mode === 'covers') {
         secCovers.classList.remove('hidden');
-        secRg.classList.add('hidden');
         btnCovers.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-fuchsia-600 text-white shadow transition flex items-center space-x-1.5";
-        btnRg.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
-      } else {
-        secCovers.classList.add('hidden');
+      } else if (mode === 'rapidgator') {
         secRg.classList.remove('hidden');
         btnRg.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow transition flex items-center space-x-1.5";
-        btnCovers.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+      } else if (mode === 'ai') {
+        secAi.classList.remove('hidden');
+        btnAi.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-600/25 transition flex items-center space-x-1.5";
+        checkAndSyncActiveHtml();
       }
       lucide.createIcons();
     }
@@ -917,6 +1144,571 @@
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       showToast('CSV exported!');
     }
+
+    // ==========================================
+    // AI CHAT ASSISTANT (BEAUTIFULSOUP + GEMINI)
+    // ==========================================
+    let aiChatHistory = [];
+    let activeAiHtml = "";
+    let activeAiHtmlSource = "none";
+    let customApiKey = localStorage.getItem('SOUP_GEMINI_API_KEY') || "";
+
+    function openApiKeyModal() {
+      const input = document.getElementById('customApiKeyInput');
+      input.value = customApiKey;
+      const statusDiv = document.getElementById('apiKeyTestStatus');
+      statusDiv.classList.add('hidden');
+      document.getElementById('apiKeyModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeApiKeyModal() {
+      document.getElementById('apiKeyModal').classList.add('hidden');
+    }
+
+    function saveCustomApiKey() {
+      const key = document.getElementById('customApiKeyInput').value.trim();
+      customApiKey = key;
+      if (key) {
+        localStorage.setItem('SOUP_GEMINI_API_KEY', key);
+        showToast("Gemini API Key tersimpan di browser!");
+      } else {
+        localStorage.removeItem('SOUP_GEMINI_API_KEY');
+        showToast("Menggunakan API Key default sistem.");
+      }
+      updateApiKeyIndicator();
+      closeApiKeyModal();
+    }
+
+    async function testCustomApiKey() {
+      const key = document.getElementById('customApiKeyInput').value.trim() || customApiKey;
+      const btn = document.getElementById('btnTestKey');
+      const statusDiv = document.getElementById('apiKeyTestStatus');
+      
+      btn.disabled = true;
+      const origText = btn.innerHTML;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Menguji...</span>`;
+      lucide.createIcons();
+      
+      try {
+        const resp = await fetch('/api/chat/validate-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_key: key })
+        });
+        const data = await resp.json();
+        statusDiv.classList.remove('hidden');
+        if (resp.ok && data.status === 'valid') {
+          statusDiv.className = "p-3 rounded-xl bg-emerald-950/80 border border-emerald-800 text-xs text-emerald-300";
+          statusDiv.innerHTML = `<strong>Valid!</strong> Model terhubung: <span class="font-mono text-emerald-200">${data.model}</span>. Respon: <em>"${data.reply}"</em>`;
+        } else {
+          statusDiv.className = "p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-xs text-rose-300";
+          statusDiv.innerHTML = `<strong>Gagal:</strong> ${data.detail || 'Kunci API tidak valid.'}`;
+        }
+      } catch (err) {
+        statusDiv.classList.remove('hidden');
+        statusDiv.className = "p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-xs text-rose-300";
+        statusDiv.innerHTML = `<strong>Error:</strong> ${err.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origText;
+        lucide.createIcons();
+      }
+    }
+
+    function updateApiKeyIndicator() {
+      const btnText = document.getElementById('apiKeyBtnText');
+      if (customApiKey) {
+        btnText.innerText = "API Key Kustom (Aktif)";
+      } else {
+        btnText.innerText = "Pengaturan API Key";
+      }
+    }
+
+    function updateCustomHtmlCount() {
+      const val = document.getElementById('aiCustomHtmlInput').value;
+      document.getElementById('customHtmlCharCount').innerText = `${val.length.toLocaleString()} karakter (${(val.length / 1024).toFixed(1)} KB)`;
+    }
+
+    function syncAiContext(source) {
+      const drawer = document.getElementById('customHtmlDrawer');
+      
+      if (source === 'covers') {
+        drawer.classList.add('hidden');
+        const html = (document.getElementById('rawHtmlInput')?.value || '').trim();
+        if (!html) {
+          showToast("Tidak ada HTML di Tab Cover Scraper.");
+          return;
+        }
+        activeAiHtml = html;
+        activeAiHtmlSource = 'covers';
+        showToast(`HTML terlampir dari Tab Cover (${(html.length / 1024).toFixed(1)} KB)`);
+      } else if (source === 'rapidgator') {
+        drawer.classList.add('hidden');
+        const html = (document.getElementById('rgRawHtmlInput')?.value || '').trim();
+        if (!html) {
+          showToast("Tidak ada HTML di Tab Rapidgator.");
+          return;
+        }
+        activeAiHtml = html;
+        activeAiHtmlSource = 'rapidgator';
+        showToast(`HTML terlampir dari Tab Rapidgator (${(html.length / 1024).toFixed(1)} KB)`);
+      } else if (source === 'custom') {
+        drawer.classList.toggle('hidden');
+        if (!drawer.classList.contains('hidden')) {
+          document.getElementById('aiCustomHtmlInput').focus();
+        }
+        return;
+      }
+      updateContextBadges();
+    }
+
+    function applyCustomHtml() {
+      const val = (document.getElementById('aiCustomHtmlInput').value || '').trim();
+      if (!val) {
+        alert("Silakan tempel kode HTML terlebih dahulu.");
+        return;
+      }
+      activeAiHtml = val;
+      activeAiHtmlSource = 'custom';
+      document.getElementById('customHtmlDrawer').classList.add('hidden');
+      updateContextBadges();
+      showToast(`HTML manual terlampir (${(val.length / 1024).toFixed(1)} KB)`);
+    }
+
+    function cancelCustomHtml() {
+      document.getElementById('customHtmlDrawer').classList.add('hidden');
+    }
+
+    function checkAndSyncActiveHtml() {
+      updateApiKeyIndicator();
+      if (!activeAiHtml) {
+        const coversHtml = (document.getElementById('rawHtmlInput')?.value || '').trim();
+        if (coversHtml) {
+          activeAiHtml = coversHtml;
+          activeAiHtmlSource = 'covers';
+        } else {
+          const rgHtml = (document.getElementById('rgRawHtmlInput')?.value || '').trim();
+          if (rgHtml) {
+            activeAiHtml = rgHtml;
+            activeAiHtmlSource = 'rapidgator';
+          }
+        }
+      }
+      updateContextBadges();
+    }
+
+    function updateContextBadges() {
+      const badgeDot = document.getElementById('attachedHtmlDot');
+      const badgeText = document.getElementById('attachedHtmlText');
+      const btnInspect = document.getElementById('btnInspectBs4');
+
+      const btnCovers = document.getElementById('ctxSourceCovers');
+      const btnRg = document.getElementById('ctxSourceRg');
+      const btnCustom = document.getElementById('ctxSourceCustom');
+
+      [btnCovers, btnRg, btnCustom].forEach(b => {
+        if (b) b.className = "px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition";
+      });
+
+      if (activeAiHtml && activeAiHtml.length > 0) {
+        const kb = (activeAiHtml.length / 1024).toFixed(1);
+        badgeDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+        const srcLabel = activeAiHtmlSource === 'covers' ? 'Tab Cover' : (activeAiHtmlSource === 'rapidgator' ? 'Tab RG' : 'Manual');
+        badgeText.innerText = `HTML Terlampir (${srcLabel}) · ${kb} KB`;
+        btnInspect.classList.remove('hidden');
+
+        if (activeAiHtmlSource === 'covers' && btnCovers) btnCovers.className = "px-3 py-1 rounded-lg text-xs font-semibold bg-fuchsia-600 text-white shadow";
+        if (activeAiHtmlSource === 'rapidgator' && btnRg) btnRg.className = "px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow";
+        if (activeAiHtmlSource === 'custom' && btnCustom) btnCustom.className = "px-3 py-1 rounded-lg text-xs font-semibold bg-amber-600 text-white shadow";
+      } else {
+        badgeDot.className = "w-2 h-2 rounded-full bg-slate-600";
+        badgeText.innerText = "Belum ada HTML terlampir";
+        btnInspect.classList.add('hidden');
+      }
+    }
+
+    async function inspectAttachedHtml() {
+      if (!activeAiHtml) {
+        showToast("Belum ada HTML yang terlampir.");
+        return;
+      }
+      const modal = document.getElementById('bs4InspectModal');
+      const content = document.getElementById('bs4InspectContent');
+      modal.classList.remove('hidden');
+      content.innerHTML = `<div class="p-6 text-center text-slate-400 flex items-center justify-center space-x-2"><i data-lucide="loader-2" class="w-5 h-5 animate-spin text-amber-400"></i><span>Membedah DOM dengan BeautifulSoup...</span></div>`;
+      lucide.createIcons();
+
+      try {
+        const resp = await fetch('/api/chat/dom-summary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ html: activeAiHtml })
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        
+        let html = `
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+              <span class="text-slate-400 block text-[10px]">Total Tag &lt;img&gt;</span>
+              <span class="text-lg font-bold text-amber-400">${data.total_images || 0}</span>
+            </div>
+            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+              <span class="text-slate-400 block text-[10px]">Link Filehost / RG</span>
+              <span class="text-lg font-bold text-emerald-400">${data.download_links ? data.download_links.length : 0}</span>
+            </div>
+            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+              <span class="text-slate-400 block text-[10px]">Total Tag &lt;a&gt; (Hyperlink)</span>
+              <span class="text-lg font-bold text-indigo-400">${data.total_links || 0}</span>
+            </div>
+            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+              <span class="text-slate-400 block text-[10px]">Candidate Cover Majalah</span>
+              <span class="text-lg font-bold text-fuchsia-400">${data.candidate_covers ? data.candidate_covers.length : (data.images ? data.images.length : 0)}</span>
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <span class="font-bold text-slate-300">Judul Halaman (&lt;title&gt;):</span>
+            <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-white font-mono break-all">${escapeHtml(data.title || '(Kosong)')}</div>
+          </div>
+        `;
+
+        if (data.description) {
+          html += `
+            <div class="space-y-1">
+              <span class="font-bold text-slate-300">Meta Description:</span>
+              <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-300 text-xs">${escapeHtml(data.description)}</div>
+            </div>
+          `;
+        }
+
+        if (data.download_links && data.download_links.length > 0) {
+          html += `
+            <div class="space-y-1">
+              <span class="font-bold text-emerald-400">Filehost Links (${data.download_links.length}):</span>
+              <div class="max-h-36 overflow-y-auto space-y-1 p-2 rounded-lg bg-slate-950 border border-slate-800">
+                ${data.download_links.map(l => `<div class="truncate text-indigo-400 hover:underline"><a href="${l}" target="_blank">${escapeHtml(l)}</a></div>`).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        if (data.candidate_covers && data.candidate_covers.length > 0) {
+          html += `
+            <div class="space-y-1">
+              <span class="font-bold text-fuchsia-400">Kandidat Cover Majalah (Top ${data.candidate_covers.length}):</span>
+              <div class="max-h-48 overflow-y-auto space-y-2 p-2 rounded-lg bg-slate-950 border border-slate-800">
+                ${data.candidate_covers.map(c => `
+                  <div class="flex items-center space-x-2 text-[11px] border-b border-slate-900 pb-1.5">
+                    <span class="text-amber-400 font-bold">${c.score ? c.score + 'pts' : 'cover'}</span>
+                    <span class="text-slate-300 truncate max-w-xs">${escapeHtml(c.alt || 'No alt')}</span>
+                    <span class="text-slate-500 font-mono text-[10px]">${c.dimensions || ''}</span>
+                    <a href="${c.src}" target="_blank" class="text-indigo-400 hover:underline truncate flex-1">${escapeHtml(c.src)}</a>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        if (data.structure_digest) {
+          html += `
+            <div class="space-y-1">
+              <span class="font-bold text-slate-300">Digest Struktur DOM (Dianalisis BeautifulSoup):</span>
+              <pre class="p-3 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-300 max-h-48 overflow-y-auto whitespace-pre-wrap">${escapeHtml(data.structure_digest)}</pre>
+            </div>
+          `;
+        }
+
+        content.innerHTML = html;
+      } catch (err) {
+        content.innerHTML = `<div class="p-4 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-300">Gagal membedah DOM: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function closeBs4Modal() {
+      document.getElementById('bs4InspectModal').classList.add('hidden');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function renderMarkdown(text) {
+      if (!text) return '';
+      let out = text;
+
+      // Code blocks: ```lang ... ```
+      out = out.replace(/```([a-zA-Z0-9_\-+]*)\n([\s\S]*?)```/g, function(match, lang, code) {
+        const cleanLang = (lang || 'code').trim();
+        const escapedCode = escapeHtml(code.trim());
+        return `<div class="my-3 rounded-xl bg-slate-950 border border-slate-800 overflow-hidden font-mono shadow-lg">
+          <div class="flex items-center justify-between px-3.5 py-1.5 bg-slate-900 border-b border-slate-800 text-[11px] text-slate-400">
+            <span class="font-bold uppercase tracking-wider text-amber-400">${cleanLang}</span>
+            <button onclick="copyCodeBlock(this)" class="px-2 py-0.5 rounded hover:bg-slate-800 hover:text-white transition flex items-center space-x-1">
+              <i data-lucide="copy" class="w-3 h-3"></i>
+              <span>Salin Kode</span>
+            </button>
+          </div>
+          <pre class="p-3.5 text-xs text-amber-200/90 overflow-x-auto leading-relaxed"><code>${escapedCode}</code></pre>
+        </div>`;
+      });
+
+      // Inline code: `code`
+      out = out.replace(/`([^`\n]+)`/g, function(match, code) {
+        return `<code class="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-mono text-xs">${escapeHtml(code)}</code>`;
+      });
+
+      // Bold & Italic
+      out = out.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
+      out = out.replace(/\*([^*]+)\*/g, '<em class="italic text-slate-300">$1</em>');
+
+      // Headings
+      out = out.replace(/^### (.*$)/gim, '<h4 class="font-bold text-base text-amber-400 mt-3 mb-1">$1</h4>');
+      out = out.replace(/^## (.*$)/gim, '<h3 class="font-bold text-lg text-white mt-4 mb-2 border-b border-slate-800 pb-1">$1</h3>');
+      out = out.replace(/^# (.*$)/gim, '<h2 class="font-extrabold text-xl text-white mt-5 mb-2">$1</h2>');
+
+      // Links: [text](url)
+      out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-amber-400 underline hover:text-amber-300">$1</a>');
+
+      // Unordered lists: - item or * item
+      out = out.replace(/^\s*[-*]\s+(.*)$/gim, '<li class="ml-4 list-disc text-slate-300">$1</li>');
+
+      // Paragraphs / line breaks
+      out = out.replace(/\n\n+/g, '<div class="h-2"></div>');
+      out = out.replace(/\n/g, '<br/>');
+
+      return out;
+    }
+
+    function copyCodeBlock(btn) {
+      const codeBlock = btn.closest('.my-3')?.querySelector('pre code');
+      if (codeBlock) {
+        const text = codeBlock.innerText;
+        navigator.clipboard.writeText(text);
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-emerald-400"></i><span class="text-emerald-400">Tersalin!</span>`;
+        lucide.createIcons();
+        setTimeout(() => {
+          btn.innerHTML = orig;
+          lucide.createIcons();
+        }, 2000);
+        showToast("Kode disalin ke clipboard!");
+      }
+    }
+
+    function clearChatHistory() {
+      aiChatHistory = [];
+      const container = document.getElementById('aiChatMessages');
+      container.innerHTML = `
+        <div class="flex items-start space-x-3">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-amber-500/20 text-white font-bold text-xs">
+            AI
+          </div>
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl rounded-tl-sm p-4 max-w-2xl text-slate-200 space-y-2 shadow-sm leading-relaxed">
+            <div class="flex items-center space-x-2">
+              <span class="font-bold text-white text-xs">SoupAI Assistant</span>
+              <span class="text-[10px] text-amber-400 font-mono bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-800/50">BeautifulSoup + Gemini 3.5 Flash</span>
+            </div>
+            <p>Halo! Riwayat percakapan telah dibersihkan. Silakan lampirkan HTML dan ajukan pertanyaan atau perintah scraping Anda.</p>
+          </div>
+        </div>
+      `;
+      showToast("Riwayat chat dibersihkan.");
+    }
+
+    function sendQuickPrompt(promptText) {
+      const input = document.getElementById('aiUserInput');
+      input.value = promptText;
+      handleSendAiMessage();
+    }
+
+    function handleAiTextareaKeydown(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        handleSendAiMessage(event);
+      }
+    }
+
+    async function handleSendAiMessage(event) {
+      if (event && event.preventDefault) event.preventDefault();
+      const input = document.getElementById('aiUserInput');
+      const userText = input.value.trim();
+      if (!userText) return;
+
+      input.value = "";
+      input.style.height = 'auto';
+
+      appendUserMessage(userText);
+      aiChatHistory.push({ role: "user", content: userText });
+
+      const assistantMsgId = "ai-reply-" + Date.now();
+      appendAssistantLoading(assistantMsgId);
+
+      const sendBtn = document.getElementById('aiSendBtn');
+      const sendBtnText = document.getElementById('aiSendBtnText');
+      sendBtn.disabled = true;
+      sendBtnText.innerText = "Berpikir...";
+
+      try {
+        const payload = {
+          message: userText,
+          html: activeAiHtml || null,
+          history: aiChatHistory.slice(0, -1),
+          api_key: customApiKey || null
+        };
+
+        const resp = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({ detail: `HTTP ${resp.status}` }));
+          throw new Error(errData.detail || `Server error (${resp.status})`);
+        }
+
+        const data = await resp.json();
+        const replyText = data.reply || "(Tidak ada balasan dari model)";
+        aiChatHistory.push({ role: "model", content: replyText });
+
+        updateAssistantMessage(assistantMsgId, replyText, data.model, data.bs4_summary);
+      } catch (err) {
+        showToast("Gagal memproses pesan AI: " + err.message);
+        updateAssistantError(assistantMsgId, err.message);
+      } finally {
+        sendBtn.disabled = false;
+        sendBtnText.innerText = "Kirim";
+        lucide.createIcons();
+        scrollToBottomChat();
+      }
+    }
+
+    function appendUserMessage(text) {
+      const container = document.getElementById('aiChatMessages');
+      const div = document.createElement('div');
+      div.className = "flex items-start justify-end space-x-3";
+      div.innerHTML = `
+        <div class="bg-indigo-600 text-white rounded-2xl rounded-tr-sm p-4 max-w-2xl space-y-1 shadow-md text-sm leading-relaxed whitespace-pre-wrap font-sans">
+          ${escapeHtml(text)}
+        </div>
+        <div class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0 text-slate-300 font-bold text-xs">
+          You
+        </div>
+      `;
+      container.appendChild(div);
+      scrollToBottomChat();
+    }
+
+    function appendAssistantLoading(msgId) {
+      const container = document.getElementById('aiChatMessages');
+      const div = document.createElement('div');
+      div.id = msgId;
+      div.className = "flex items-start space-x-3";
+      div.innerHTML = `
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-amber-500/20 text-white font-bold text-xs">
+          AI
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl rounded-tl-sm p-4 max-w-2xl text-slate-200 space-y-2 shadow-sm leading-relaxed">
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-white text-xs">SoupAI Assistant</span>
+            <span class="text-[10px] text-amber-400 font-mono animate-pulse">Memproses dengan BeautifulSoup & Gemini...</span>
+          </div>
+          <div class="flex items-center space-x-2 py-2 text-slate-400 text-xs">
+            <i data-lucide="loader-2" class="w-4 h-4 animate-spin text-amber-400"></i>
+            <span>Membaca DOM & menghasilkan jawaban...</span>
+          </div>
+        </div>
+      `;
+      container.appendChild(div);
+      lucide.createIcons();
+      scrollToBottomChat();
+    }
+
+    function updateAssistantMessage(msgId, markdownText, modelName, bs4Summary) {
+      const el = document.getElementById(msgId);
+      if (!el) return;
+
+      let bs4Badge = "";
+      if (bs4Summary && bs4Summary.title) {
+        bs4Badge = `<div class="text-[10px] text-slate-400 font-mono bg-slate-950/80 px-2 py-1 rounded border border-slate-800 flex items-center space-x-1.5 truncate max-w-full">
+          <i data-lucide="file-code" class="w-3 h-3 text-amber-400 flex-shrink-0"></i>
+          <span class="truncate">BS4 Context: ${escapeHtml(bs4Summary.title)}</span>
+        </div>`;
+      }
+
+      el.innerHTML = `
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-amber-500/20 text-white font-bold text-xs">
+          AI
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl rounded-tl-sm p-4 max-w-2xl text-slate-200 space-y-2 shadow-sm leading-relaxed">
+          <div class="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+            <div class="flex items-center space-x-2">
+              <span class="font-bold text-white text-xs">SoupAI Assistant</span>
+              <span class="text-[10px] text-amber-400 font-mono bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-800/50">${escapeHtml(modelName || 'Gemini 3.5 Flash')}</span>
+            </div>
+            <button onclick="copyMessageText(this)" class="text-slate-400 hover:text-white text-xs flex items-center space-x-1 transition" title="Salin Jawaban">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span class="text-[11px]">Salin</span>
+            </button>
+          </div>
+          ${bs4Badge}
+          <div class="prose-chat text-xs sm:text-sm text-slate-200 leading-relaxed font-sans">
+            ${renderMarkdown(markdownText)}
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+      scrollToBottomChat();
+    }
+
+    function updateAssistantError(msgId, errorMsg) {
+      const el = document.getElementById(msgId);
+      if (!el) return;
+      el.innerHTML = `
+        <div class="w-8 h-8 rounded-xl bg-rose-600 flex items-center justify-center flex-shrink-0 shadow-md text-white font-bold text-xs">
+          !
+        </div>
+        <div class="bg-rose-950/60 border border-rose-800 rounded-2xl rounded-tl-sm p-4 max-w-2xl text-rose-200 space-y-2 shadow-sm leading-relaxed">
+          <div class="font-bold text-rose-300 text-xs">Kesalahan Pemrosesan AI</div>
+          <p class="text-xs text-rose-200">${escapeHtml(errorMsg)}</p>
+          <div class="pt-1">
+            <button onclick="openApiKeyModal()" class="px-3 py-1 bg-rose-900/80 hover:bg-rose-800 text-rose-100 rounded-lg text-xs font-semibold">Periksa API Key Gemini</button>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+      scrollToBottomChat();
+    }
+
+    function copyMessageText(btn) {
+      const bubble = btn.closest('.bg-slate-900\\/90');
+      const prose = bubble?.querySelector('.prose-chat');
+      if (prose) {
+        navigator.clipboard.writeText(prose.innerText);
+        showToast("Teks jawaban disalin!");
+      }
+    }
+
+    function scrollToBottomChat() {
+      const container = document.getElementById('aiChatMessages');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    // Auto-detect on load
+    window.addEventListener('DOMContentLoaded', () => {
+      checkAndSyncActiveHtml();
+    });
   </script>
 </body>
 </html>

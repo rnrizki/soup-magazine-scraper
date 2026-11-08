@@ -18,6 +18,10 @@ from app.scraper import (
     extract_single_magazine_rapidgator, extract_entries_from_html,
     is_cloudflare_challenge
 )
+from app.ai_chat import (
+    ChatRequest, SelectorQueryRequest, run_ai_chat,
+    DEFAULT_GEMINI_KEY, extract_dom_summary, call_gemini_api
+)
 
 app = FastAPI(
     title="SoupCover - High-Res Magazine Cover Scraper",
@@ -73,6 +77,34 @@ class BulkRapidgatorRequest(BaseModel):
 @app.api_route("/api/health", methods=["GET", "HEAD"])
 def health():
     return {"status": "ok", "app": "soup-magazine-scraper", "version": "1.0.0"}
+
+# ==========================================
+# AI CHAT ASSISTANT (BEAUTIFULSOUP + GEMINI)
+# ==========================================
+@app.post("/api/chat")
+def chat_with_ai(req: ChatRequest):
+    try:
+        result = run_ai_chat(req)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/chat/dom-summary")
+def get_dom_summary(req: ScrapeHtmlRequest):
+    try:
+        summary = extract_dom_summary(req.html)
+        return summary
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Gagal memproses HTML: {str(e)}")
+
+@app.post("/api/chat/validate-key")
+def validate_gemini_key(payload: Dict[str, str]):
+    key = payload.get("api_key", "").strip() or DEFAULT_GEMINI_KEY
+    try:
+        reply, model = call_gemini_api("Jawab dengan kata 'OK' untuk verifikasi status.", [], key)
+        return {"status": "valid", "model": model, "reply": reply.strip()}
+    except Exception as e:
+        return {"status": "invalid", "error": str(e)}
 
 # Scrape from direct URL
 @app.post("/api/scrape")
