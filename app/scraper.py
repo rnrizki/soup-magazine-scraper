@@ -580,15 +580,18 @@ class MagazineScraper:
 
 from urllib.parse import unquote
 
-def extract_filehost_links(html_text: str, soup: Optional[BeautifulSoup] = None) -> Dict[str, List[str]]:
+def extract_filehost_links(html_text: str, soup: Optional[BeautifulSoup] = None) -> Dict[str, Any]:
     """
-    Extract Rapidgator, Nitroflare, DDownload, Katfile, and other filehost links
+    Extract Rapidgator, DDownload, Nitroflare, Katfile, Turbobit, and other filehost links
     from HTML text and BeautifulSoup DOM.
     """
     rapidgator_links = set()
-    nitroflare_links = set()
     ddownload_links = set()
+    nitroflare_links = set()
     katfile_links = set()
+    turbobit_links = set()
+    rosefile_links = set()
+    fikper_links = set()
     other_links = set()
 
     # 1. Regex search across raw HTML for direct Rapidgator URLs
@@ -600,52 +603,129 @@ def extract_filehost_links(html_text: str, soup: Optional[BeautifulSoup] = None)
     for m in rg_matches:
         rapidgator_links.add(m.rstrip('.'))
 
-    # 2. Check encoded redirect links (e.g. /redirect?url=https%3A%2F%2Frapidgator...)
+    # 2. Direct regex for DDownload
+    ddl_matches = re.findall(
+        r'https?://(?:www\.)?(?:ddownload\.com|ddl\.to)/[a-zA-Z0-9_\-\./]+',
+        html_text,
+        re.IGNORECASE
+    )
+    for m in ddl_matches:
+        ddownload_links.add(m.rstrip('.'))
+
+    # 3. Direct regex for Nitroflare
+    nf_matches = re.findall(
+        r'https?://(?:www\.)?nitroflare\.com/view/[a-zA-Z0-9_\-\./]+',
+        html_text,
+        re.IGNORECASE
+    )
+    for m in nf_matches:
+        nitroflare_links.add(m.rstrip('.'))
+
+    # 4. Direct regex for Katfile
+    kf_matches = re.findall(
+        r'https?://(?:www\.)?katfile\.com/[a-zA-Z0-9_\-\./]+',
+        html_text,
+        re.IGNORECASE
+    )
+    for m in kf_matches:
+        katfile_links.add(m.rstrip('.'))
+
+    # 5. Direct regex for Turbobit
+    tb_matches = re.findall(
+        r'https?://(?:www\.)?(?:turbobit\.net|turb\.to)/[a-zA-Z0-9_\-\./]+(?:\.html)?',
+        html_text,
+        re.IGNORECASE
+    )
+    for m in tb_matches:
+        turbobit_links.add(m.rstrip('.'))
+
+    # 6. Direct regex for Rosefile & Fikper
+    rf_matches = re.findall(r'https?://(?:www\.)?rosefile\.net/[a-zA-Z0-9_\-\./]+', html_text, re.IGNORECASE)
+    for m in rf_matches:
+        rosefile_links.add(m.rstrip('.'))
+
+    fp_matches = re.findall(r'https?://(?:www\.)?fikper\.com/[a-zA-Z0-9_\-\./]+', html_text, re.IGNORECASE)
+    for m in fp_matches:
+        fikper_links.add(m.rstrip('.'))
+
+    # 7. Check encoded redirect links (e.g. /redirect?url=https%3A%2F%2Frapidgator...)
     redirect_matches = re.findall(
-        r'(?:url|link|target|goto|href)=(https%3A%2F%2F(?:www\.)?(?:rapidgator\.net|rg\.to)[^&"\'\s>]+)',
+        r'(?:url|link|target|goto|href)=(https%3A%2F%2F[^&"\'\s>]+)',
         html_text,
         re.IGNORECASE
     )
     for r in redirect_matches:
         try:
-            rapidgator_links.add(unquote(r).rstrip('.'))
+            unquoted = unquote(r).rstrip('.')
+            low_u = unquoted.lower()
+            if 'rapidgator.net/file/' in low_u or 'rg.to/file/' in low_u:
+                rapidgator_links.add(unquoted)
+            elif 'ddownload.com/' in low_u or 'ddl.to/' in low_u:
+                ddownload_links.add(unquoted)
+            elif 'nitroflare.com/view/' in low_u:
+                nitroflare_links.add(unquoted)
+            elif 'katfile.com/' in low_u:
+                katfile_links.add(unquoted)
+            elif 'turbobit.net/' in low_u or 'turb.to/' in low_u:
+                turbobit_links.add(unquoted)
         except Exception:
             pass
 
-    # 3. Check anchor tags and data attributes if soup is available
+    # 8. Check anchor tags and data attributes if soup is available
     if soup:
         for a in soup.find_all('a'):
             href = a.get('href', '').strip()
-            # Direct or relative link
-            if 'rapidgator.net' in href.lower() or 'rg.to' in href.lower():
+            # Discard non-download links like FAQ or reseller purchase
+            if '/faq/' in href.lower() or 'buying-a-premium' in href.lower():
+                continue
+
+            low_href = href.lower()
+            if 'rapidgator.net/file/' in low_href or 'rg.to/file/' in low_href:
                 rapidgator_links.add(href.rstrip('.'))
-            elif 'nitroflare.com' in href.lower():
-                nitroflare_links.add(href.rstrip('.'))
-            elif 'ddownload.com' in href.lower() or 'ddl.to' in href.lower():
+            elif 'ddownload.com/' in low_href or 'ddl.to/' in low_href:
                 ddownload_links.add(href.rstrip('.'))
-            elif 'katfile.com' in href.lower():
+            elif 'nitroflare.com/view/' in low_href:
+                nitroflare_links.add(href.rstrip('.'))
+            elif 'katfile.com/' in low_href:
                 katfile_links.add(href.rstrip('.'))
+            elif 'turbobit.net/' in low_href or 'turb.to/' in low_href:
+                turbobit_links.add(href.rstrip('.'))
+            elif 'rosefile.net/' in low_href:
+                rosefile_links.add(href.rstrip('.'))
+            elif 'fikper.com/' in low_href:
+                fikper_links.add(href.rstrip('.'))
 
             # Data attributes
             for attr in ('data-url', 'data-href', 'data-link', 'data-target'):
                 dval = a.get(attr, '').strip()
-                if 'rapidgator.net' in dval.lower() or 'rg.to' in dval.lower():
+                low_dval = dval.lower()
+                if '/faq/' in low_dval or 'buying-a-premium' in low_dval:
+                    continue
+                if 'rapidgator.net/file/' in low_dval or 'rg.to/file/' in low_dval:
                     rapidgator_links.add(dval.rstrip('.'))
+                elif 'ddownload.com/' in low_dval or 'ddl.to/' in low_dval:
+                    ddownload_links.add(dval.rstrip('.'))
+                elif 'nitroflare.com/view/' in low_dval:
+                    nitroflare_links.add(dval.rstrip('.'))
+                elif 'katfile.com/' in low_dval:
+                    katfile_links.add(dval.rstrip('.'))
+                elif 'turbobit.net/' in low_dval or 'turb.to/' in low_dval:
+                    turbobit_links.add(dval.rstrip('.'))
 
-    # 4. Also check Nitroflare / DDownload in raw HTML
-    nf_matches = re.findall(r'https?://(?:www\.)?nitroflare\.com/view/[a-zA-Z0-9_\-\./]+', html_text, re.IGNORECASE)
-    for m in nf_matches:
-        nitroflare_links.add(m.rstrip('.'))
-
-    ddl_matches = re.findall(r'https?://(?:www\.)?(?:ddownload\.com|ddl\.to)/[a-zA-Z0-9_\-\./]+', html_text, re.IGNORECASE)
-    for m in ddl_matches:
-        ddownload_links.add(m.rstrip('.'))
+    all_links = sorted(list(
+        rapidgator_links | ddownload_links | nitroflare_links | katfile_links | turbobit_links | rosefile_links | fikper_links | other_links
+    ))
 
     return {
         "rapidgator": sorted(list(rapidgator_links)),
-        "nitroflare": sorted(list(nitroflare_links)),
         "ddownload": sorted(list(ddownload_links)),
-        "katfile": sorted(list(katfile_links))
+        "nitroflare": sorted(list(nitroflare_links)),
+        "katfile": sorted(list(katfile_links)),
+        "turbobit": sorted(list(turbobit_links)),
+        "rosefile": sorted(list(rosefile_links)),
+        "fikper": sorted(list(fikper_links)),
+        "other": sorted(list(other_links)),
+        "all_links": all_links
     }
 
 def extract_page_file_size(text: str) -> Optional[str]:
@@ -676,25 +756,44 @@ def extract_single_magazine_rapidgator(html: str, url: str) -> Dict[str, Any]:
     filehosts = extract_filehost_links(html, soup)
     rg_links = filehosts.get("rapidgator", [])
     primary_rg = rg_links[0] if rg_links else ""
+    ddl_links = filehosts.get("ddownload", [])
+    primary_ddl = ddl_links[0] if ddl_links else ""
+    nf_links = filehosts.get("nitroflare", [])
+    primary_nf = nf_links[0] if nf_links else ""
+    kf_links = filehosts.get("katfile", [])
+    primary_kf = kf_links[0] if kf_links else ""
+    tb_links = filehosts.get("turbobit", [])
+    primary_tb = tb_links[0] if tb_links else ""
+    all_links = filehosts.get("all_links", [])
 
     # Extract file size
     file_size = extract_page_file_size(soup.get_text()[:4000]) or ""
+
+    hosts_found = [h for h, l in [("RG", rg_links), ("DDL", ddl_links), ("NF", nf_links), ("KF", kf_links), ("TB", tb_links)] if l]
 
     return {
         "title": title or "Magazine Title",
         "rapidgator_url": primary_rg,
         "rapidgator_links": rg_links,
-        "nitroflare_links": filehosts.get("nitroflare", []),
-        "ddownload_links": filehosts.get("ddownload", []),
+        "ddownload_url": primary_ddl,
+        "ddownload_links": ddl_links,
+        "nitroflare_url": primary_nf,
+        "nitroflare_links": nf_links,
+        "katfile_url": primary_kf,
+        "katfile_links": kf_links,
+        "turbobit_url": primary_tb,
+        "turbobit_links": tb_links,
+        "all_links": all_links,
+        "hosts_found": hosts_found,
         "file_size": file_size,
         "source_url": url,
-        "status": "found" if primary_rg else "not_found"
+        "status": "found" if (primary_rg or primary_ddl or all_links) else "not_found"
     }
 
 def extract_entries_from_html(html: str, base_url: str) -> List[Dict[str, Any]]:
     """
     Extract magazine entries from raw HTML (whether a single detail page or a multi-entry catalog page).
-    If the page has multiple .cell / .story / .post elements, extract title and rapidgator links for each.
+    If the page has multiple .cell / .story / .post elements, extract title and filehost links for each.
     """
     soup = make_soup(html)
     containers = soup.select('div.cell, div.story, div.news, div.short_story, div.card, div.post, article')
@@ -716,7 +815,15 @@ def extract_entries_from_html(html: str, base_url: str) -> List[Dict[str, Any]]:
             links_data = extract_filehost_links(c_html, c)
             rg_list = links_data.get("rapidgator", [])
             primary_rg = rg_list[0] if rg_list else ""
+            ddl_list = links_data.get("ddownload", [])
+            primary_ddl = ddl_list[0] if ddl_list else ""
+            nf_list = links_data.get("nitroflare", [])
+            kf_list = links_data.get("katfile", [])
+            tb_list = links_data.get("turbobit", [])
+            all_links = links_data.get("all_links", [])
             file_size = extract_page_file_size(c.get_text()) or ""
+
+            hosts_found = [h for h, l in [("RG", rg_list), ("DDL", ddl_list), ("NF", nf_list), ("KF", kf_list), ("TB", tb_list)] if l]
 
             if title:
                 items.append({
@@ -724,10 +831,19 @@ def extract_entries_from_html(html: str, base_url: str) -> List[Dict[str, Any]]:
                     "title": title,
                     "rapidgator_url": primary_rg,
                     "rapidgator_links": rg_list,
-                    "nitroflare_links": links_data.get("nitroflare", []),
+                    "ddownload_url": primary_ddl,
+                    "ddownload_links": ddl_list,
+                    "nitroflare_url": nf_list[0] if nf_list else "",
+                    "nitroflare_links": nf_list,
+                    "katfile_url": kf_list[0] if kf_list else "",
+                    "katfile_links": kf_list,
+                    "turbobit_url": tb_list[0] if tb_list else "",
+                    "turbobit_links": tb_list,
+                    "all_links": all_links,
+                    "hosts_found": hosts_found,
                     "file_size": file_size,
                     "source_url": detail_link or base_url,
-                    "status": "found" if primary_rg else ("has_detail_link" if detail_link else "not_found")
+                    "status": "found" if (primary_rg or primary_ddl or all_links) else ("has_detail_link" if detail_link else "not_found")
                 })
         if items:
             return items

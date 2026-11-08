@@ -390,31 +390,58 @@
             </div>
             <div>
               <div class="flex items-center space-x-2">
-                <h3 class="font-bold text-white text-sm">Extracted Rapidgator Data</h3>
+                <h3 class="font-bold text-white text-sm">Extracted Download Links</h3>
                 <span id="rgStatsBadge" class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono text-xs font-semibold">0 items</span>
               </div>
-              <p id="rgSubtitleText" class="text-xs text-slate-400 font-mono mt-0.5">Ready for CSV export and clipboard copy</p>
+              <p id="rgSubtitleText" class="text-xs text-slate-400 font-mono mt-0.5">Rapidgator, DDownload & Semua Host terdeteksi</p>
             </div>
           </div>
 
-          <!-- Rapidgator Export Buttons -->
+          <!-- Rapidgator & Filehost Export Buttons -->
           <div class="flex flex-wrap items-center gap-2">
             <button 
               type="button" 
               onclick="downloadRapidgatorCsv()" 
               id="btnRgCsv"
-              class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-lg shadow-emerald-600/20 transition active:scale-95">
+              class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-lg shadow-emerald-600/20 transition active:scale-95"
+              title="Download CSV lengkap berisi kolom Judul, Rapidgator, DDownload, dan Semua Link Host">
               <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
-              <span>Download CSV (Judul & Link)</span>
+              <span>Download CSV (Semua Link & Host)</span>
+            </button>
+
+            <button 
+              type="button" 
+              onclick="downloadAllLinksTxt()" 
+              class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 font-semibold text-xs flex items-center space-x-1.5 border border-slate-700 transition active:scale-95"
+              title="Unduh file TXT daftar URL bersih untuk JDownloader / IDM / DownThemAll">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+              <span>TXT Downloader</span>
+            </button>
+
+            <button 
+              type="button" 
+              onclick="copyAllRetrievedLinks()" 
+              id="btnRgCopyAll"
+              class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center space-x-1.5 shadow transition active:scale-95"
+              title="Salin SEMUA link unduhan (Rapidgator + DDownload + Semua Host) ke clipboard">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+              <span>Copy Semua Link</span>
             </button>
 
             <button 
               type="button" 
               onclick="copyAllRapidgatorLinks()" 
-              id="btnRgCopyAll"
-              class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center space-x-1.5 shadow transition active:scale-95">
-              <i data-lucide="copy" class="w-4 h-4"></i>
-              <span>Copy All Rapidgator Links</span>
+              class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 font-medium text-xs flex items-center space-x-1 border border-slate-700 transition active:scale-95"
+              title="Salin link Rapidgator saja">
+              <span>RG Saja</span>
+            </button>
+
+            <button 
+              type="button" 
+              onclick="copyAllDdownloadLinks()" 
+              class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-300 font-medium text-xs flex items-center space-x-1 border border-slate-700 transition active:scale-95"
+              title="Salin link DDownload saja">
+              <span>DDL Saja</span>
             </button>
 
             <button 
@@ -435,7 +462,7 @@
                 <tr class="bg-slate-900/90 text-slate-400 border-b border-slate-800 uppercase tracking-wider text-[11px]">
                   <th class="py-3 px-4 w-12 text-center">#</th>
                   <th class="py-3 px-4 font-bold text-slate-200">Judul Majalah</th>
-                  <th class="py-3 px-4 font-bold text-slate-200">Link Rapidgator</th>
+                  <th class="py-3 px-4 font-bold text-slate-200">Download Links (Rapidgator, DDownload, dll)</th>
                   <th class="py-3 px-3 w-28 text-center">Ukuran File</th>
                   <th class="py-3 px-3 w-24 text-center">Status</th>
                   <th class="py-3 px-3 w-24 text-center">Action</th>
@@ -1148,7 +1175,7 @@
 
     function renderRapidgatorResults(data) {
       document.getElementById('rgResultsSection').classList.remove('hidden');
-      document.getElementById('rgStatsBadge').innerText = `${data.total_items} items · ${data.found_links_count} Rapidgator links`;
+      document.getElementById('rgStatsBadge').innerText = `${data.total_items} items · ${data.found_links_count} links found`;
 
       const tbody = document.getElementById('rgTableBody');
       if (!data.items || data.items.length === 0) {
@@ -1157,36 +1184,79 @@
       }
 
       tbody.innerHTML = data.items.map((item, idx) => {
-        const hasRg = Boolean(item.rapidgator_url);
-        const statusBadge = hasRg 
+        const hasRg = Boolean(item.rapidgator_url || (item.rapidgator_links && item.rapidgator_links.length > 0));
+        const hasDdl = Boolean(item.ddownload_url || (item.ddownload_links && item.ddownload_links.length > 0));
+        const hasAny = Boolean(hasRg || hasDdl || (item.all_links && item.all_links.length > 0));
+
+        const statusBadge = hasAny 
           ? `<span class="px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800 text-[10px]">Found</span>`
           : (item.status === 'cloudflare_blocked' 
               ? `<span class="px-2 py-0.5 rounded-full bg-amber-950/80 text-amber-400 border border-amber-800 text-[10px]" title="Cloudflare challenge">Cloudflare</span>`
               : `<span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px]">No Link</span>`);
 
-        const ddlCell = (item.ddownload_links && item.ddownload_links.length > 0)
-          ? `<div class="mt-1 flex items-center space-x-1.5 text-[11px] text-purple-300">
-               <span class="px-1.5 py-0.2 rounded bg-purple-950/80 text-purple-300 border border-purple-800 text-[9px] font-bold">DDL</span>
-               <a href="${item.ddownload_links[0]}" target="_blank" class="hover:underline truncate max-w-xs" title="${item.ddownload_links[0]}">
-                 ${item.ddownload_links[0]}
-               </a>
-             </div>`
-          : '';
+        let linksHtml = '';
+        if (item.rapidgator_url) {
+          linksHtml += `
+            <div class="flex items-center space-x-1.5 max-w-md truncate">
+              <span class="px-1.5 py-0.2 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-800 text-[9px] font-bold">RG</span>
+              <a href="${item.rapidgator_url}" target="_blank" class="text-indigo-400 hover:text-indigo-300 hover:underline truncate font-mono text-xs" title="${item.rapidgator_url}">
+                ${item.rapidgator_url}
+              </a>
+              <button onclick="copySingleUrl('${item.rapidgator_url}')" title="Copy Rapidgator Link" class="p-1 text-slate-400 hover:text-white transition">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+              </button>
+            </div>
+          `;
+        }
+        if (item.ddownload_links && item.ddownload_links.length > 0) {
+          item.ddownload_links.forEach(ddl => {
+            linksHtml += `
+              <div class="mt-1 flex items-center space-x-1.5 max-w-md truncate text-[11px] text-purple-300">
+                <span class="px-1.5 py-0.2 rounded bg-purple-950/80 text-purple-300 border border-purple-800 text-[9px] font-bold">DDL</span>
+                <a href="${ddl}" target="_blank" class="text-purple-400 hover:text-purple-300 hover:underline truncate font-mono text-xs" title="${ddl}">
+                  ${ddl}
+                </a>
+                <button onclick="copySingleUrl('${ddl}')" title="Copy DDownload Link" class="p-1 text-slate-400 hover:text-white transition">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                </button>
+              </div>
+            `;
+          });
+        }
+        if (item.nitroflare_links && item.nitroflare_links.length > 0) {
+          item.nitroflare_links.forEach(nf => {
+            linksHtml += `
+              <div class="mt-1 flex items-center space-x-1.5 max-w-md truncate text-[11px] text-amber-300">
+                <span class="px-1.5 py-0.2 rounded bg-amber-950/80 text-amber-300 border border-amber-800 text-[9px] font-bold">NF</span>
+                <a href="${nf}" target="_blank" class="text-amber-400 hover:text-amber-300 hover:underline truncate font-mono text-xs" title="${nf}">
+                  ${nf}
+                </a>
+                <button onclick="copySingleUrl('${nf}')" title="Copy Nitroflare Link" class="p-1 text-slate-400 hover:text-white transition">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                </button>
+              </div>
+            `;
+          });
+        }
+        if (item.katfile_links && item.katfile_links.length > 0) {
+          item.katfile_links.forEach(kf => {
+            linksHtml += `
+              <div class="mt-1 flex items-center space-x-1.5 max-w-md truncate text-[11px] text-cyan-300">
+                <span class="px-1.5 py-0.2 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-800 text-[9px] font-bold">KF</span>
+                <a href="${kf}" target="_blank" class="text-cyan-400 hover:text-cyan-300 hover:underline truncate font-mono text-xs" title="${kf}">
+                  ${kf}
+                </a>
+                <button onclick="copySingleUrl('${kf}')" title="Copy Katfile Link" class="p-1 text-slate-400 hover:text-white transition">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                </button>
+              </div>
+            `;
+          });
+        }
 
-        const rgLinkCell = hasRg
-          ? `<div class="space-y-1">
-               <div class="flex items-center space-x-1.5 max-w-md truncate">
-                 <span class="px-1.5 py-0.2 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-800 text-[9px] font-bold">RG</span>
-                 <a href="${item.rapidgator_url}" target="_blank" class="text-indigo-400 hover:text-indigo-300 hover:underline truncate font-mono text-xs" title="${item.rapidgator_url}">
-                   ${item.rapidgator_url}
-                 </a>
-               </div>
-               ${ddlCell}
-             </div>`
-          : `<div class="space-y-1">
-               <span class="text-slate-500 italic text-xs">Rapidgator link not found</span>
-               ${ddlCell}
-             </div>`;
+        if (!linksHtml) {
+          linksHtml = `<span class="text-slate-500 italic text-xs">No download links found</span>`;
+        }
 
         return `
           <tr class="hover:bg-slate-900/60 transition">
@@ -1197,13 +1267,14 @@
                 <a href="${item.source_url}" target="_blank" class="hover:underline text-slate-400">${item.source_url}</a>
               </div>
             </td>
-            <td class="py-3 px-4">${rgLinkCell}</td>
+            <td class="py-3 px-4">${linksHtml}</td>
             <td class="py-3 px-3 text-center text-slate-400 text-xs">${item.file_size || '-'}</td>
             <td class="py-3 px-3 text-center">${statusBadge}</td>
             <td class="py-3 px-3 text-center">
-              ${hasRg ? `
-                <button onclick="copySingleUrl('${item.rapidgator_url}')" title="Copy Rapidgator Link" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition">
-                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              ${hasAny ? `
+                <button onclick="copyRowAllLinks(${idx})" title="Copy Semua Link Majalah Ini" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition inline-flex items-center space-x-1">
+                  <i data-lucide="copy-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span class="text-[10px]">Copy</span>
                 </button>
               ` : '-'}
             </td>
@@ -1218,18 +1289,70 @@
     // ==========================================
     function downloadRapidgatorCsv() {
       if (!currentRgData || !currentRgData.items || currentRgData.items.length === 0) {
-        showToast('No data to export.');
+        showToast('Tidak ada data untuk diekspor ke CSV.');
         return;
       }
 
-      const rows = [
-        ["Judul Majalah", "Link Rapidgator", "Ukuran File", "Status", "Source URL"]
+      const headers = [
+        "No",
+        "Judul Majalah",
+        "Link Rapidgator",
+        "Link DDownload",
+        "Link Nitroflare",
+        "Link Katfile",
+        "Link Turbobit",
+        "Semua Link Download (All Known Links)",
+        "Host Tersedia",
+        "Total Link",
+        "Ukuran File",
+        "Status",
+        "Source URL"
       ];
 
-      currentRgData.items.forEach(item => {
+      const rows = [headers];
+
+      currentRgData.items.forEach((item, idx) => {
+        const rg = item.rapidgator_url || (item.rapidgator_links ? item.rapidgator_links.join(' ; ') : '');
+        const ddl = item.ddownload_url || (item.ddownload_links ? item.ddownload_links.join(' ; ') : '');
+        const nf = item.nitroflare_url || (item.nitroflare_links ? item.nitroflare_links.join(' ; ') : '');
+        const kf = item.katfile_url || (item.katfile_links ? item.katfile_links.join(' ; ') : '');
+        const tb = item.turbobit_url || (item.turbobit_links ? item.turbobit_links.join(' ; ') : '');
+
+        // Collect all unique links
+        const allSet = new Set();
+        if (item.all_links && Array.isArray(item.all_links)) {
+          item.all_links.forEach(l => allSet.add(l));
+        }
+        if (item.rapidgator_links) item.rapidgator_links.forEach(l => allSet.add(l));
+        if (item.ddownload_links) item.ddownload_links.forEach(l => allSet.add(l));
+        if (item.nitroflare_links) item.nitroflare_links.forEach(l => allSet.add(l));
+        if (item.katfile_links) item.katfile_links.forEach(l => allSet.add(l));
+        if (item.turbobit_links) item.turbobit_links.forEach(l => allSet.add(l));
+        if (rg) allSet.add(rg);
+        if (ddl) allSet.add(ddl);
+
+        const allList = Array.from(allSet).filter(Boolean);
+        const allJoined = allList.join(" | ");
+
+        // Hosts list
+        const hosts = [];
+        if (rg) hosts.push("Rapidgator");
+        if (ddl) hosts.push("DDownload");
+        if (nf) hosts.push("Nitroflare");
+        if (kf) hosts.push("Katfile");
+        if (tb) hosts.push("Turbobit");
+
         rows.push([
+          String(idx + 1),
           `"${String(item.title || '').replace(/"/g, '""')}"`,
-          `"${String(item.rapidgator_url || '').replace(/"/g, '""')}"`,
+          `"${String(rg).replace(/"/g, '""')}"`,
+          `"${String(ddl).replace(/"/g, '""')}"`,
+          `"${String(nf).replace(/"/g, '""')}"`,
+          `"${String(kf).replace(/"/g, '""')}"`,
+          `"${String(tb).replace(/"/g, '""')}"`,
+          `"${String(allJoined).replace(/"/g, '""')}"`,
+          `"${hosts.join(", ")}"`,
+          String(allList.length),
           `"${String(item.file_size || '').replace(/"/g, '""')}"`,
           `"${String(item.status || '').replace(/"/g, '""')}"`,
           `"${String(item.source_url || '').replace(/"/g, '""')}"`
@@ -1241,13 +1364,70 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `rapidgator_majalah_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `semua_link_majalah_${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-      showToast('CSV Judul & Link Rapidgator downloaded successfully!');
+      showToast('CSV Berhasil diunduh! Berisi kolom Rapidgator, DDownload, dan Semua Link.');
+    }
+
+    function downloadAllLinksTxt() {
+      if (!currentRgData || !currentRgData.items) return;
+      const allLinks = [];
+      currentRgData.items.forEach(item => {
+        if (item.all_links && Array.isArray(item.all_links)) {
+          item.all_links.forEach(l => { if (!allLinks.includes(l)) allLinks.push(l); });
+        }
+        if (item.rapidgator_links) {
+          item.rapidgator_links.forEach(l => { if (!allLinks.includes(l)) allLinks.push(l); });
+        }
+        if (item.ddownload_links) {
+          item.ddownload_links.forEach(l => { if (!allLinks.includes(l)) allLinks.push(l); });
+        }
+        if (item.rapidgator_url && !allLinks.includes(item.rapidgator_url)) {
+          allLinks.push(item.rapidgator_url);
+        }
+        if (item.ddownload_url && !allLinks.includes(item.ddownload_url)) {
+          allLinks.push(item.ddownload_url);
+        }
+      });
+
+      if (allLinks.length === 0) {
+        showToast('Tidak ada link ditemukan untuk diunduh.');
+        return;
+      }
+
+      const txtContent = allLinks.join("\r\n");
+      const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `downloader_links_${new Date().toISOString().slice(0, 10)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast(`TXT ${allLinks.length} link berhasil diunduh untuk downloader!`);
+    }
+
+    function copyAllRetrievedLinks() {
+      if (!currentRgData || !currentRgData.items) return;
+      const links = [];
+      currentRgData.items.forEach(i => {
+        const rowLinks = (i.all_links && i.all_links.length > 0)
+          ? i.all_links
+          : [i.rapidgator_url, ...(i.ddownload_links || [])].filter(Boolean);
+        rowLinks.forEach(l => { if (!links.includes(l)) links.push(l); });
+      });
+
+      if (links.length === 0) {
+        showToast('Tidak ada link ditemukan untuk disalin.');
+        return;
+      }
+      navigator.clipboard.writeText(links.join('\n'));
+      showToast(`Berhasil menyalin ${links.length} link (Rapidgator + DDownload + Semua Host)!`);
     }
 
     function copyAllRapidgatorLinks() {
@@ -1257,12 +1437,45 @@
         .filter(Boolean);
 
       if (links.length === 0) {
-        showToast('No Rapidgator links found to copy.');
+        showToast('Tidak ada link Rapidgator ditemukan.');
         return;
       }
 
       navigator.clipboard.writeText(links.join('\n'));
-      showToast(`Copied ${links.length} Rapidgator links to clipboard!`);
+      showToast(`Berhasil menyalin ${links.length} link Rapidgator!`);
+    }
+
+    function copyAllDdownloadLinks() {
+      if (!currentRgData || !currentRgData.items) return;
+      const links = [];
+      currentRgData.items.forEach(i => {
+        if (i.ddownload_links && Array.isArray(i.ddownload_links)) {
+          i.ddownload_links.forEach(l => { if (!links.includes(l)) links.push(l); });
+        } else if (i.ddownload_url && !links.includes(i.ddownload_url)) {
+          links.push(i.ddownload_url);
+        }
+      });
+
+      if (links.length === 0) {
+        showToast('Tidak ada link DDownload ditemukan.');
+        return;
+      }
+      navigator.clipboard.writeText(links.join('\n'));
+      showToast(`Berhasil menyalin ${links.length} link DDownload!`);
+    }
+
+    function copyRowAllLinks(idx) {
+      if (!currentRgData || !currentRgData.items || !currentRgData.items[idx]) return;
+      const item = currentRgData.items[idx];
+      const links = (item.all_links && item.all_links.length > 0)
+        ? item.all_links
+        : [item.rapidgator_url, ...(item.ddownload_links || [])].filter(Boolean);
+      if (links.length === 0) {
+        showToast('Tidak ada link pada majalah ini.');
+        return;
+      }
+      navigator.clipboard.writeText(links.join('\n'));
+      showToast(`Disalin ${links.length} link untuk "${(item.title || '').slice(0, 25)}..."!`);
     }
 
     function downloadRapidgatorJson() {

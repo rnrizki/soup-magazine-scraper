@@ -299,10 +299,11 @@ def bulk_rapidgator(req: BulkRapidgatorRequest):
         else:
             base_url = (req.base_url or "https://softarchive.download").strip()
             items = extract_entries_from_html(req.raw_html, base_url)
+            total_links = sum(len(i.get("all_links") or ([1] if (i.get("rapidgator_url") or i.get("ddownload_url")) else [])) for i in items)
             return {
                 "mode": "html",
                 "total_items": len(items),
-                "found_links_count": sum(1 for i in items if i.get("rapidgator_url")),
+                "found_links_count": total_links,
                 "items": items
             }
 
@@ -344,8 +345,16 @@ def bulk_rapidgator(req: BulkRapidgatorRequest):
                     "title": page_title or "Cloudflare Verification",
                     "rapidgator_url": "",
                     "rapidgator_links": [],
-                    "nitroflare_links": [],
+                    "ddownload_url": "",
                     "ddownload_links": [],
+                    "nitroflare_url": "",
+                    "nitroflare_links": [],
+                    "katfile_url": "",
+                    "katfile_links": [],
+                    "turbobit_url": "",
+                    "turbobit_links": [],
+                    "all_links": [],
+                    "hosts_found": [],
                     "file_size": "",
                     "source_url": target_url,
                     "status": "cloudflare_blocked",
@@ -361,8 +370,16 @@ def bulk_rapidgator(req: BulkRapidgatorRequest):
                 "title": "Failed to fetch",
                 "rapidgator_url": "",
                 "rapidgator_links": [],
-                "nitroflare_links": [],
+                "ddownload_url": "",
                 "ddownload_links": [],
+                "nitroflare_url": "",
+                "nitroflare_links": [],
+                "katfile_url": "",
+                "katfile_links": [],
+                "turbobit_url": "",
+                "turbobit_links": [],
+                "all_links": [],
+                "hosts_found": [],
                 "file_size": "",
                 "source_url": target_url,
                 "status": "error",
@@ -383,10 +400,12 @@ def bulk_rapidgator(req: BulkRapidgatorRequest):
 
     results.sort(key=lambda x: x.get("id", 0))
 
+    total_links = sum(len(i.get("all_links") or ([1] if (i.get("rapidgator_url") or i.get("ddownload_url")) else [])) for i in results)
+
     return {
         "mode": "urls",
         "total_items": len(results),
-        "found_links_count": sum(1 for i in results if i.get("rapidgator_url")),
+        "found_links_count": total_links,
         "items": results
     }
 
