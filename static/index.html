@@ -1388,20 +1388,25 @@
             <div class="space-y-1">
               <span class="font-bold text-emerald-400">Filehost Links (${data.download_links.length}):</span>
               <div class="max-h-36 overflow-y-auto space-y-1 p-2 rounded-lg bg-slate-950 border border-slate-800">
-                ${data.download_links.map(l => `<div class="truncate text-indigo-400 hover:underline"><a href="${l}" target="_blank">${escapeHtml(l)}</a></div>`).join('')}
+                ${data.download_links.map(l => {
+                  const url = typeof l === 'object' ? (l.href || '') : l;
+                  const txt = typeof l === 'object' ? (l.text ? `${l.text} (${l.href})` : l.href) : l;
+                  return `<div class="truncate text-indigo-400 hover:underline"><a href="${url}" target="_blank">${escapeHtml(txt)}</a></div>`;
+                }).join('')}
               </div>
             </div>
           `;
         }
 
-        if (data.candidate_covers && data.candidate_covers.length > 0) {
+        const imgs = data.candidate_covers || data.images || [];
+        if (imgs.length > 0) {
           html += `
             <div class="space-y-1">
-              <span class="font-bold text-fuchsia-400">Kandidat Cover Majalah (Top ${data.candidate_covers.length}):</span>
+              <span class="font-bold text-fuchsia-400">Kandidat Gambar / Cover (${imgs.length}):</span>
               <div class="max-h-48 overflow-y-auto space-y-2 p-2 rounded-lg bg-slate-950 border border-slate-800">
-                ${data.candidate_covers.map(c => `
+                ${imgs.map(c => `
                   <div class="flex items-center space-x-2 text-[11px] border-b border-slate-900 pb-1.5">
-                    <span class="text-amber-400 font-bold">${c.score ? c.score + 'pts' : 'cover'}</span>
+                    <span class="text-amber-400 font-bold">${c.score ? c.score + 'pts' : 'img'}</span>
                     <span class="text-slate-300 truncate max-w-xs">${escapeHtml(c.alt || 'No alt')}</span>
                     <span class="text-slate-500 font-mono text-[10px]">${c.dimensions || ''}</span>
                     <a href="${c.src}" target="_blank" class="text-indigo-400 hover:underline truncate flex-1">${escapeHtml(c.src)}</a>
