@@ -2236,6 +2236,9 @@
     // Auto-detect on load
     window.addEventListener('DOMContentLoaded', () => {
       checkAndSyncActiveHtml();
+      if (window.location.hash === '#rapidgator' || window.location.hash === '#rg') {
+        setAppMode('rapidgator');
+      }
     });
 
     // Auto-import handler from Extension or External Scripts
